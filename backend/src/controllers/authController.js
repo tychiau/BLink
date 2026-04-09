@@ -26,7 +26,7 @@ exports.register = async (req, res) => {
     const userId = await User.create({
       nome,
       email: email.toLowerCase(),
-      password_hash,
+      senha: password_hash,
       tipo_usuario
     });
 
@@ -76,7 +76,7 @@ exports.login = async (req, res) => {
     }
 
     // Verificar password
-    const validPassword = await bcrypt.compare(password, user.password_hash);
+    const validPassword = await bcrypt.compare(password, user.senha);
     
     if (!validPassword) {
       return res.status(401).json({ 
@@ -214,8 +214,8 @@ exports.getProfile = async (req, res) => {
       nome: user.nome,
       email: user.email,
       tipo_usuario: user.tipo_usuario,
-      email_verificado: user.email_verificado,
-      criado_em: user.criado_em
+      status: user.status,
+      data_criacao: user.data_criacao
     });
 
   } catch (error) {
