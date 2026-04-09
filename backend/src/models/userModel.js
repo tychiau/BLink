@@ -5,7 +5,7 @@ const User = {
    * Buscar todos os utilizadores
    */
   getAll: async () => {
-    const [rows] = await db.execute('SELECT id, nome, email, tipo_usuario, criado_em FROM usuarios');
+    const [rows] = await db.execute('SELECT id, nome, email, tipo_usuario, data_criacao FROM usuarios');
     return rows;
   },
 
@@ -27,16 +27,17 @@ const User = {
 
   /**
    * Criar novo utilizador (REGISTO)
-   * @param {Object} userData - {nome, email, password_hash, tipo_usuario}
+   * @param {Object} userData - {nome, email, senha, tipo_usuario}
    */
   create: async (userData) => {
-    const { nome, email, password_hash, tipo_usuario } = userData;
-    
+    const { nome, email, senha, tipo_usuario } = userData;
+
+    // Using status 'Ativo' as default instead of email_verificado
     const [result] = await db.execute(
-      'INSERT INTO usuarios (nome, email, password_hash, tipo_usuario, email_verificado, criado_em) VALUES (?, ?, ?, ?, false, NOW())',
-      [nome, email, password_hash, tipo_usuario]
+      'INSERT INTO usuarios (nome, email, senha, tipo_usuario, status, data_criacao) VALUES (?, ?, ?, ?, ?, NOW())',
+      [nome, email, senha, tipo_usuario, 'Ativo']
     );
-    
+
     return result.insertId;
   },
 
@@ -45,10 +46,10 @@ const User = {
    */
   updatePassword: async (userId, newPasswordHash) => {
     const [result] = await db.execute(
-      'UPDATE usuarios SET password_hash = ?, atualizado_em = NOW() WHERE id = ?',
+      'UPDATE usuarios SET senha = ? WHERE id = ?',
       [newPasswordHash, userId]
     );
-    
+
     return result.affectedRows > 0;
   },
 
@@ -65,10 +66,10 @@ const User = {
    */
   verifyEmail: async (userId) => {
     const [result] = await db.execute(
-      'UPDATE usuarios SET email_verificado = true, atualizado_em = NOW() WHERE id = ?',
-      [userId]
+      'UPDATE usuarios SET status = ? WHERE id = ?',
+      ['Ativo', userId] // Mapeamos para status, já que email_verificado não existe na tabela
     );
-    
+
     return result.affectedRows > 0;
   },
 
@@ -76,10 +77,8 @@ const User = {
    * Atualizar último login
    */
   updateLastLogin: async (userId) => {
-    await db.execute(
-      'UPDATE usuarios SET ultimo_login = NOW() WHERE id = ?',
-      [userId]
-    );
+    // Tabela usuarios não tem coluna ultimo_login
+    // await db.execute('UPDATE usuarios SET ultimo_login = NOW() WHERE id = ?', [userId]);
   }
 };
 
