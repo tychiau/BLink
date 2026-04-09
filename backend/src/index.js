@@ -1,56 +1,58 @@
 const express = require('express');
 const cors = require('cors');
-const mysql = require('mysql2/promise'); // Usamos a versão com 'promise' para facilitar o código
-const fs = require('fs');
-const path = require('path');
-const PORT = 19672;
-require('dotenv').config({ path: path.join(__dirname, '../../.env') });
+require('dotenv').config();
+
+// Importar rotas
+const authRoutes = require('./routes/authRoutes');
+const protectedRoutes = require('./routes/protectedRoutes');
 
 const app = express();
+const PORT = process.env.PORT;
 
+// --- MIDDLEWARES ---
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true })); // Parse de form data
 
-// --- CONFIGURAÇÃO DA CONEXÃO COM AIVEN (MYSQL) ---
-const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  charset: 'utf8mb4',
-  waitForConnections: true,
-  ssl: process.env.DB_SSL === 'true' || process.env.DB_SSL_MODE === 'REQUIRED' ? {
-    rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED === 'true'
-  } : false,
-});
+// --- ROTAS ---
 
-// Teste de conexão imediato
-(async () => {
-  try {
-    const connection = await pool.getConnection();
-    console.log('Conexão com MySQL na Aiven estabelecida com sucesso!');
-    connection.release();
-  } catch (err) {
-    console.error('Erro ao conectar no MySQL da Aiven:', err.message);
-  }
-})();
-// --------------------------------------------------
+// Rotas da API
+app.use('/auth', authRoutes);
+app.use('/protected', protectedRoutes);
 
+// Rota base para verificar se a API está online
 app.get('/', (req, res) => {
-  res.json({ message: 'API a funcionar e conectada ao MySQL!' });
+  res.json({
+    sistema: "Blink - Intermediação de Compra e Venda",
+    status: "Online",
+    endpoints: {
+      auth: "/auth",
+      protected: "/protected"
+    },
+    timestamp: new Date().toISOString()
+  });
 });
 
-// Exemplo de rota de teste para seu sistema de intermediação
-app.get('/teste-db', async (req, res) => {
-  try {
-    const [rows] = await pool.query('SELECT 1 + 1 AS resultado');
-    res.json({ mensagem: "Banco respondendo!", query: rows });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+// Middleware de erro 404
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Rota não encontrada'
+  });
 });
 
+// Middleware de erro global
+app.use((err, req, res, next) => {
+  console.error('Erro:', err);
+  res.status(500).json({
+    error: 'Erro interno do servidor',
+    message: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
+
+// --- INICIALIZAÇÃO DO SERVIDOR ---
 app.listen(PORT, () => {
-  console.log('Servidor rodando na porta 19672');
+  console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
+
+// Exportamos o pool para que você possa usá-lo em outros arquivos (Controller/Routes)
+module.exports = pool;
