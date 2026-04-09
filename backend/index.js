@@ -1,38 +1,41 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const pool = require('./config/db');
+const pool = require('./src/config/db');
 
 // Importar rotas
-const authRoutes = require('./routes/authRoutes');
-const protectedRoutes = require('./routes/protectedRoutes');
+const authRoutes = require('./src/routes/authRoutes');
+const protectedRoutes = require('./src/routes/protectedRoutes');
+const productRoutes = require('./src/routes/productRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // --- MIDDLEWARES ---
 app.use(cors({
-  origin: process.env.FRONTEND_URL,
+  origin: process.env.FRONTEND_URL || '*', // Alterei para '*' caso o .env não tenha a URL, para evitar bloqueio no teste
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
-app.use(express.urlencoded({ extended: true })); // Parse de form data
+app.use(express.urlencoded({ extended: true })); 
 
 // --- ROTAS ---
 
 // Rotas da API
 app.use('/auth', authRoutes);
 app.use('/protected', protectedRoutes);
+app.use('/api', productRoutes); // 
 
-// Rota base para verificar se a API está online
+// Rota base atualizada para mostrar o novo endpoint
 app.get('/', (req, res) => {
   res.json({
     sistema: "Blink - Intermediação de Compra e Venda",
     status: "Online",
     endpoints: {
       auth: "/auth",
-      protected: "/protected"
+      protected: "/protected",
+      produtos: "/api/produtos" // <--- Adicionei aqui para você ver no navegador
     },
     timestamp: new Date().toISOString()
   });
@@ -59,5 +62,4 @@ app.listen(PORT, () => {
   console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
 
-// Exportamos o pool para que você possa usá-lo em outros arquivos (Controller/Routes)
 module.exports = pool;
