@@ -10,7 +10,11 @@ const app = express();
 const PORT = process.env.PORT;
 
 // --- MIDDLEWARES ---
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // Parse de form data
 
