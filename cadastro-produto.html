@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blink - Cadastro de Produto</title>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f4f7fc;
+            color: #1e293b;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            background: white;
+            border-radius: 20px;
+            padding: 1rem 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            border: 1px solid #bfdbfe;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .logo-area h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #1E3A8A, #2563EB);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .logo-area span {
+            font-size: 0.85rem;
+            color: #4b5563;
+        }
+
+        .user-area {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .user-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            background: #f1f5f9;
+            padding: 0.5rem 1.2rem;
+            border-radius: 40px;
+        }
+
+        .user-badge i {
+            font-size: 1.2rem;
+            color: #2563eb;
+        }
+
+        /* Alert personalizado */
+        .custom-alert {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border-left: 4px solid #2563eb;
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+            max-width: 350px;
+        }
+        .custom-alert.success {
+            border-left-color: #10b981;
+        }
+        .custom-alert.success i {
+            color: #10b981;
+        }
+        .custom-alert.error {
+            border-left-color: #ef4444;
+        }
+        .custom-alert.error i {
+            color: #ef4444;
+        }
+        .custom-alert.info {
+            border-left-color: #3b82f6;
+        }
+        .custom-alert.info i {
+            color: #3b82f6;
+        }
+        .custom-alert .alert-content {
+            flex: 1;
+        }
+        .custom-alert .alert-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.2rem;
+        }
+        .custom-alert .alert-message {
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+        .custom-alert .close-alert {
+            cursor: pointer;
+            color: #9ca3af;
+            font-size: 0.9rem;
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Modal de Busca */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 24px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow: hidden;
+            animation: modalFadeIn 0.3s ease;
+        }
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        .modal-header {
+            padding: 1.2rem 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h3 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        .modal-header .close-modal {
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: #94a3b8;
+            transition: 0.2s;
+        }
+        .modal-header .close-modal:hover {
+            color: #ef4444;
+        }
+        .modal-search {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .modal-search input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 40px;
+            font-size: 0.9rem;
+        }
+        .modal-search input:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+        .modal-results {
+            padding: 1rem 1.5rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .search-result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem;
+            border-bottom: 1px solid #f1f5f9;
+            transition: 0.2s;
+        }
+        .search-result-item:hover {
+            background: #f8fafc;
+        }
+        .result-info {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+        .result-info i {
+            font-size: 1.2rem;
+            color: #2563eb;
+        }
+        .result-info span {
+            font-weight: 500;
+        }
+        .result-rating {
+            font-size: 0.75rem;
+            color: #f59e0b;
+            margin-left: 0.5rem;
+        }
+        .btn-add-result {
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            padding: 0.3rem 1rem;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+        .btn-add-result:hover {
+            background: #1d4ed8;
+        }
+        .btn-add-result.disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+        }
+        .no-results {
+            text-align: center;
+            padding: 2rem;
+            color: #94a3b8;
+        }
+
+        /* Grid principal: 2 colunas */
+        .product-grid {
+            display: grid;
+            grid-template-columns: 1fr 420px;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 24px;
+            border: 1px solid #bfdbfe;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.02);
+            padding: 1.8rem;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            border-left: 4px solid #2563eb;
+            padding-left: 1rem;
+            color: #0f172a;
+        }
+
+        .card-title i {
+            color: #2563eb;
+            font-size: 1.2rem;
+        }
+
+        /* Labels em negrito */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control, select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 16px;
+            font-size: 0.95rem;
+            transition: 0.2s;
+            background: white;
+        }
+
+        .form-control:focus, select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+
+        .row-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        /* Condição - containers lado a lado */
+        .condition-section {
+            margin-top: 0.5rem;
+        }
+        .condition-title {
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: #1e293b;
+            margin-bottom: 0.75rem;
+        }
+        .condition-row {
+            display: flex;
+            flex-direction: row;
+            gap: 1.5rem;
+            flex-wrap: nowrap;
+        }
+        .condition-card {
+            flex: 1;
+            min-width: 0;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 1rem 1.2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .condition-card.selected {
+            border-color: #2563eb;
+            background: #eff6ff;
+        }
+        .condition-card:hover {
+            border-color: #3b82f6;
+        }
+        .condition-card input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #2563eb;
+            cursor: pointer;
+            margin: 0;
+        }
+        .condition-card label {
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            color: #1e293b;
+            flex: 1;
+        }
+        .condition-card.selected label {
+            color: #2563eb;
+        }
+
+        /* Upload */
+        .upload-area {
+            border: 2px dashed #bfdbfe;
+            background: #fafcff;
+            border-radius: 24px;
+            padding: 2rem 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-bottom: 1rem;
+        }
+        .upload-area:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+        .upload-area i {
+            font-size: 2.2rem;
+            color: #3b82f6;
+        }
+        .preview-imgs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 1rem;
+        }
+        .preview-img {
+            width: 80px;
+            height: 80px;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 1px solid #e2e8f0;
+            position: relative;
+        }
+        .remove-img {
+            position: absolute;
+            background: #ef4444;
+            color: white;
+            border-radius: 20px;
+            font-size: 12px;
+            padding: 2px 6px;
+            cursor: pointer;
+            margin-left: -15px;
+            margin-top: -8px;
+        }
+
+        /* Toggle Switch */
+        .toggle-switch-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+            padding: 1rem;
+            border-radius: 20px;
+            margin-bottom: 1.5rem;
+        }
+        .toggle-label {
+            font-weight: 600;
+            color: #1e293b;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 52px;
+            height: 28px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #cbd5e1;
+            transition: 0.3s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #2563eb;
+        }
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        /* Comissão com traço */
+        .comissao-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+            padding: 0.8rem 1rem;
+            border-radius: 20px;
+            margin-bottom: 0.5rem;
+        }
+        .comissao-input-area {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+        }
+        .comissao-input-area input {
+            width: 80px;
+            text-align: center;
+            padding: 0.5rem;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+        }
+        .percent-traco {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #2563eb;
+            position: relative;
+            display: inline-block;
+        }
+        .percent-traco::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: #2563eb;
+            transform: translateY(-50%);
+        }
+
+        /* Avaliação mínima */
+        .avaliacao-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .avaliacao-btn {
+            background: white;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 40px;
+            padding: 0.5rem 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.9rem;
+        }
+        .avaliacao-btn.selected {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+
+        /* Intermediários tags */
+        .intermediarios-container {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 1rem;
+            min-height: 100px;
+            margin-bottom: 1rem;
+        }
+        .intermediario-tag {
+            background: white;
+            border-radius: 40px;
+            padding: 0.5rem 1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0.3rem;
+            cursor: pointer;
+            transition: 0.2s;
+            border: 1px solid #e2e8f0;
+        }
+        .intermediario-tag.selected {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+        .intermediario-tag i {
+            font-size: 0.8rem;
+        }
+        .add-intermediario {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .add-intermediario input {
+            flex: 1;
+            padding: 0.6rem 1rem;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 40px;
+            font-size: 0.9rem;
+        }
+        .add-intermediario button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            padding: 0.6rem 1.2rem;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-dashed {
+            background: transparent;
+            border: 2px dashed #3b82f6;
+            border-radius: 40px;
+            padding: 0.6rem 1.2rem;
+            width: 100%;
+            text-align: center;
+            color: #2563eb;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .btn-dashed:hover {
+            background: #eff6ff;
+        }
+
+        .resumo-card {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 1rem;
+            margin-top: 1.5rem;
+        }
+        .resumo-linha {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.8rem;
+            font-size: 0.9rem;
+        }
+
+        /* Container dos botões - LADO A LADO e CENTRALIZADO */
+        .action-buttons-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 1rem;
+        }
+        .action-buttons {
+            display: flex;
+            flex-direction: row;
+            gap: 1rem;
+            justify-content: center;
+            align-items: center;
+        }
+        .btn {
+            padding: 0.5rem 1.2rem;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .btn-outline {
+            background: white;
+            border: 1.5px solid #cbd5e1;
+        }
+        .btn-outline:hover {
+            background: #f8fafc;
+        }
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background: #f1f5f9;
+        }
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 3rem;
+            background: white;
+            border-radius: 24px;
+            border: 1px solid #bfdbfe;
+            padding: 2rem 1.5rem 1.2rem;
+        }
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 2rem;
+        }
+        .footer-col h4 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #2563eb;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .footer-col p {
+            font-size: 0.8rem;
+            color: #4b5563;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        .footer-bottom {
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 1.5rem;
+            margin-top: 1.5rem;
+            font-size: 0.75rem;
+            color: #6c757d;
+        }
+
+        @media (max-width: 900px) {
+            .product-grid {
+                grid-template-columns: 1fr;
+            }
+            .condition-row {
+                flex-direction: row !important;
+                flex-wrap: wrap;
+            }
+            .condition-card {
+                min-width: calc(50% - 0.75rem);
+            }
+            .action-buttons {
+                flex-wrap: wrap;
+            }
+            .btn {
+                white-space: normal;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="top-bar">
+        <div class="logo-area">
+            <h1><i class="fas fa-link" style="color:#2563eb;"></i> Blink</h1>
+            <span>Business Link · Intermediação segura</span>
+        </div>
+        <div class="user-area">
+            <div class="user-badge"><i class="fas fa-store"></i><span>Olá, João Silva</span></div>
+            <i class="fas fa-bell" style="color:#475569;"></i>
+        </div>
+    </div>
+
+    <div class="product-grid">
+        <!-- COLUNA ESQUERDA -->
+        <div>
+            <div class="card">
+                <div class="card-title"><i class="fas fa-clipboard-list"></i> Informações do Produto</div>
+                <div class="form-group">
+                    <label>NOME DO PRODUTO</label>
+                    <input type="text" class="form-control" id="prodNome" placeholder="Ex: Câmera Mirrorless Sony Alpha A7 III">
+                </div>
+                <div class="row-2col">
+                    <div class="form-group">
+                        <label>CATEGORIA</label>
+                        <select id="categoria" class="form-control">
+                            <option>Eletrônicos</option>
+                            <option>Moda</option>
+                            <option>Casa & Decoração</option>
+                            <option>Esportes</option>
+                            <option>Livros</option>
+                            <option>Automotivo</option>
+                            <option>Saúde & Beleza</option>
+                            <option>Brinquedos</option>
+                            <option>Alimentos & Bebidas</option>
+                            <option>Outros</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>SUBCATEGORIA</label>
+                        <input type="text" class="form-control" id="subcategoria" placeholder="Ex: Câmeras">
+                    </div>
+                </div>
+                
+                <div class="condition-section">
+                    <div class="condition-title">CONDIÇÃO</div>
+                    <div class="condition-row">
+                        <div class="condition-card selected" data-cond="novo">
+                            <input type="radio" name="condicao" id="condNovo" value="Novo" checked>
+                            <label for="condNovo">Novo</label>
+                        </div>
+                        <div class="condition-card" data-cond="usado">
+                            <input type="radio" name="condicao" id="condUsado" value="Usado">
+                            <label for="condUsado">Usado</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 2rem;">
+                <div class="card-title"><i class="fas fa-images"></i> Imagens do Produto</div>
+                <div class="upload-area" id="uploadArea">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>Arraste suas fotos aqui<br>ou clique para selecionar</p>
+                    <input type="file" id="fileInput" multiple accept="image/*" style="display:none;">
+                </div>
+                <div class="preview-imgs" id="previewContainer"></div>
+            </div>
+
+            <div class="card" style="margin-top: 2rem;">
+                <div class="card-title"><i class="fas fa-tag"></i> Detalhes e Preço</div>
+                <div class="form-group">
+                    <label>PREÇO DE VENDA (MZN)</label>
+                    <input type="number" id="precoVenda" class="form-control" placeholder="Digite o valor" step="any">
+                </div>
+                <div class="form-group">
+                    <label>PROVÍNCIA / CIDADE</label>
+                    <input type="text" class="form-control" id="provincia" placeholder="Ex: Maputo, Cidade">
+                </div>
+                <div class="form-group">
+                    <label>DESCRIÇÃO DETALHADA</label>
+                    <textarea class="form-control" rows="4" id="descricao" placeholder="Descrição das principais características..."></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- COLUNA DIREITA -->
+        <div>
+            <div class="card">
+                <div class="card-title"><i class="fas fa-users"></i> Configurações de Intermediário</div>
+                
+                <div class="toggle-switch-wrapper">
+                    <span class="toggle-label"><i class="fas fa-globe"></i> Permitir qualquer intermediário</span>
+                    <label class="switch">
+                        <input type="checkbox" id="permitirToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label>COMISSÃO</label>
+                    <div class="comissao-row">
+                        <span>Percentual sobre venda</span>
+                        <div class="comissao-input-area">
+                            <input type="number" id="comissao" value="5" step="0.5">
+                            <span class="percent-traco">%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>AVALIAÇÃO MÍNIMA</label>
+                    <div class="avaliacao-buttons" id="avaliacaoGroup">
+                        <div data-nota="1.0" class="avaliacao-btn">1.0</div>
+                        <div data-nota="2.5" class="avaliacao-btn">2.5</div>
+                        <div data-nota="4.0" class="avaliacao-btn">4.0</div>
+                        <div data-nota="4.5" class="avaliacao-btn selected">4.5</div>
+                        <div data-nota="5.0" class="avaliacao-btn">5.0</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>INTERMEDIÁRIOS SELECIONADOS</label>
+                    <div class="intermediarios-container" id="intermediariosList">
+                        <div data-id="bruno" class="intermediario-tag selected">
+                            <i class="fas fa-user-circle"></i> Bruno Silva <i class="fas fa-times-circle" style="margin-left: 5px; cursor: pointer;"></i>
+                        </div>
+                        <div data-id="ana" class="intermediario-tag selected">
+                            <i class="fas fa-user-circle"></i> Ana Costa <i class="fas fa-times-circle" style="margin-left: 5px; cursor: pointer;"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="add-intermediario">
+                        <input type="text" id="novoIntermediario" placeholder="Nome do intermediário">
+                        <button id="adicionarIntermediarioBtn"><i class="fas fa-plus"></i> Adicionar</button>
+                    </div>
+                </div>
+
+                <div id="buscarBtn" class="btn-dashed"><i class="fas fa-search"></i> Buscar intermediários +</div>
+
+                <div class="resumo-card">
+                    <div class="resumo-linha"><span><i class="fas fa-chart-line"></i> Resumo da venda</span> <span></span></div>
+                    <div class="resumo-linha"><span>Preço do produto:</span> <span id="resumoPreco">0.00 MZN</span></div>
+                    <div class="resumo-linha"><span>Comissão (<span id="comissaoPercent">5</span>%):</span> <span id="resumoComissao">0.00 MZN</span></div>
+                    <div class="resumo-linha"><span>Vendedor recebe:</span> <span id="resumoRecebe">0.00 MZN</span></div>
+                    <div class="resumo-linha"><span>Avaliação mínima:</span> <span id="resumoAvaliacao">4.5</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botões LADO A LADO e CENTRALIZADOS -->
+    <div class="action-buttons-container">
+        <div class="action-buttons">
+            <button class="btn btn-outline" id="limparBtn"><i class="fas fa-eraser"></i> Limpar Formulário</button>
+            <button class="btn btn-secondary" id="rascunhoBtn"><i class="fas fa-save"></i> Salvar como Rascunho</button>
+            <button class="btn btn-primary" id="publicarBtn"><i class="fas fa-rocket"></i> Publicar Produto</button>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="footer-grid">
+            <div class="footer-col">
+                <h4><i class="fas fa-globe"></i> PLATAFORMA</h4>
+                <p>Sobre</p>
+                <p>Como Funciona</p>
+                <p>Taxas</p>
+                <p>Segurança</p>
+            </div>
+            <div class="footer-col">
+                <h4><i class="fas fa-headset"></i> SUPORTE</h4>
+                <p>FAQ</p>
+                <p>Contacto</p>
+                <p>Ouvidoria</p>
+                <p>Chat Online</p>
+            </div>
+            <div class="footer-col">
+                <h4><i class="fas fa-gavel"></i> LEGAL</h4>
+                <p>Termos de Uso</p>
+                <p>Privacidade</p>
+                <p>Cookies</p>
+                <p>LGPD</p>
+            </div>
+            <div class="footer-col">
+                <h4><i class="fas fa-handshake"></i> BLINK</h4>
+                <p>A maior plataforma de intermediação segura de produtos premium em Moçambique.</p>
+                <p><i class="fas fa-envelope"></i> apoio@blink.mz</p>
+                <p><i class="fas fa-phone"></i> +258 84 123 4567</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            © 2026 Blink Moçambique. Todos os direitos reservados.
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Busca de Intermediários -->
+<div id="searchModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-search"></i> Buscar Intermediários</h3>
+            <i class="fas fa-times close-modal" id="closeModalBtn"></i>
+        </div>
+        <div class="modal-search">
+            <input type="text" id="searchInput" placeholder="Digite o nome, email ou telefone...">
+        </div>
+        <div class="modal-results" id="searchResults">
+            <!-- Resultados da busca aparecerão aqui -->
+        </div>
+    </div>
+</div>
+
+<script>
+    // Lista simulada de intermediários disponíveis
+    const intermediariosDisponiveis = [
+        { id: 1, nome: "Carlos Mendes", email: "carlos@blink.mz", telefone: "84 123 4567", avaliacao: 4.8, cidade: "Maputo" },
+        { id: 2, nome: "Maria João", email: "maria@blink.mz", telefone: "85 234 5678", avaliacao: 4.9, cidade: "Matola" },
+        { id: 3, nome: "Paulo Santos", email: "paulo@blink.mz", telefone: "86 345 6789", avaliacao: 4.7, cidade: "Beira" },
+        { id: 4, nome: "Fernanda Lima", email: "fernanda@blink.mz", telefone: "87 456 7890", avaliacao: 5.0, cidade: "Nampula" },
+        { id: 5, nome: "Ricardo Souza", email: "ricardo@blink.mz", telefone: "82 567 8901", avaliacao: 4.6, cidade: "Quelimane" },
+        { id: 6, nome: "Juliana Costa", email: "juliana@blink.mz", telefone: "83 678 9012", avaliacao: 4.9, cidade: "Maputo" },
+        { id: 7, nome: "André Oliveira", email: "andre@blink.mz", telefone: "84 789 0123", avaliacao: 4.5, cidade: "Tete" },
+        { id: 8, nome: "Patrícia Rocha", email: "patricia@blink.mz", telefone: "85 890 1234", avaliacao: 4.8, cidade: "Inhambane" },
+    ];
+
+    // Elementos da modal
+    const modal = document.getElementById('searchModal');
+    const searchInput = document.getElementById('searchInput');
+    const searchResults = document.getElementById('searchResults');
+    const buscarBtn = document.getElementById('buscarBtn');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+
+    // Obter lista atual de intermediários selecionados
+    function getSelectedIntermediarios() {
+        const tags = document.querySelectorAll('#intermediariosList .intermediario-tag');
+        const selecionados = [];
+        tags.forEach(tag => {
+            const nome = tag.innerText.trim().replace('×', '').trim();
+            selecionados.push(nome);
+        });
+        return selecionados;
+    }
+
+    // Verificar se intermediário já está selecionado
+    function isAlreadySelected(nome) {
+        const selecionados = getSelectedIntermediarios();
+        return selecionados.includes(nome);
+    }
+
+    // Adicionar intermediário à lista
+    function adicionarIntermediario(nome) {
+        if (isAlreadySelected(nome)) {
+            showAlert('Aviso', `${nome} já está na lista de intermediários selecionados!`, 'info');
+            return false;
+        }
+        const intermediariosList = document.getElementById('intermediariosList');
+        const newTag = document.createElement('div');
+        newTag.className = 'intermediario-tag selected';
+        newTag.innerHTML = `<i class="fas fa-user-circle"></i> ${nome} <i class="fas fa-times-circle" style="margin-left: 5px; cursor: pointer;"></i>`;
+        intermediariosList.appendChild(newTag);
+        setupRemoveButtons();
+        showAlert('Intermediário adicionado', `${nome} foi adicionado à lista`, 'success');
+        return true;
+    }
+
+    // Função para buscar intermediários
+    function searchIntermediarios(query) {
+        const searchTerm = query.toLowerCase().trim();
+        if (searchTerm === "") {
+            return intermediariosDisponiveis;
+        }
+        return intermediariosDisponiveis.filter(intermediario => 
+            intermediario.nome.toLowerCase().includes(searchTerm) ||
+            intermediario.email.toLowerCase().includes(searchTerm) ||
+            intermediario.telefone.includes(searchTerm) ||
+            intermediario.cidade.toLowerCase().includes(searchTerm)
+        );
+    }
+
+    // Renderizar resultados da busca
+    function renderSearchResults() {
+        const query = searchInput.value;
+        const results = searchIntermediarios(query);
+        
+        if (results.length === 0) {
+            searchResults.innerHTML = `<div class="no-results"><i class="fas fa-user-slash"></i><p>Nenhum intermediário encontrado</p><small>Tente outro nome, email ou telefone</small></div>`;
+            return;
+        }
+        
+        searchResults.innerHTML = '';
+        results.forEach(intermediario => {
+            const alreadySelected = isAlreadySelected(intermediario.nome);
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'search-result-item';
+            resultDiv.innerHTML = `
+                <div class="result-info">
+                    <i class="fas fa-user-circle"></i>
+                    <div>
+                        <div><strong>${intermediario.nome}</strong> <span class="result-rating"><i class="fas fa-star"></i> ${intermediario.avaliacao}</span></div>
+                        <small style="color:#6b7280;">${intermediario.email} • ${intermediario.telefone} • ${intermediario.cidade}</small>
+                    </div>
+                </div>
+                <button class="btn-add-result ${alreadySelected ? 'disabled' : ''}" data-nome="${intermediario.nome}" ${alreadySelected ? 'disabled' : ''}>
+                    ${alreadySelected ? '<i class="fas fa-check"></i> Adicionado' : '<i class="fas fa-plus"></i> Adicionar'}
+                </button>
+            `;
+            searchResults.appendChild(resultDiv);
+        });
+        
+        // Adicionar eventos aos botões de adicionar
+        document.querySelectorAll('.btn-add-result:not(.disabled)').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const nome = btn.getAttribute('data-nome');
+                if (adicionarIntermediario(nome)) {
+                    renderSearchResults();
+                }
+            });
+        });
+    }
+
+    // Abrir modal
+    function openModal() {
+        modal.classList.add('active');
+        searchInput.value = '';
+        renderSearchResults();
+        searchInput.focus();
+    }
+
+    // Fechar modal
+    function closeModal() {
+        modal.classList.remove('active');
+    }
+
+    // Eventos da modal
+    buscarBtn.addEventListener('click', openModal);
+    closeModalBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    searchInput.addEventListener('input', renderSearchResults);
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) closeModal();
+    });
+
+    // Função para mostrar alertas personalizados
+    function showAlert(title, message, type = 'info') {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `custom-alert ${type}`;
+        alertDiv.innerHTML = `
+            <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
+            <div class="alert-content">
+                <div class="alert-title">${title}</div>
+                <div class="alert-message">${message}</div>
+            </div>
+            <i class="fas fa-times close-alert"></i>
+        `;
+        document.body.appendChild(alertDiv);
+        
+        const closeBtn = alertDiv.querySelector('.close-alert');
+        closeBtn.addEventListener('click', () => alertDiv.remove());
+        setTimeout(() => { if (alertDiv.parentNode) alertDiv.remove(); }, 4000);
+    }
+
+    // Condição
+    const conditionCards = document.querySelectorAll('.condition-card');
+    const radioNovo = document.getElementById('condNovo');
+    const radioUsado = document.getElementById('condUsado');
+    
+    function updateConditionSelection() {
+        if (radioNovo.checked) {
+            conditionCards.forEach(card => card.classList.remove('selected'));
+            document.querySelector('.condition-card[data-cond="novo"]').classList.add('selected');
+        } else if (radioUsado.checked) {
+            conditionCards.forEach(card => card.classList.remove('selected'));
+            document.querySelector('.condition-card[data-cond="usado"]').classList.add('selected');
+        }
+    }
+    
+    radioNovo.addEventListener('change', updateConditionSelection);
+    radioUsado.addEventListener('change', updateConditionSelection);
+    
+    conditionCards.forEach(card => {
+        card.addEventListener('click', () => {
+            const radio = card.querySelector('input[type="radio"]');
+            if (radio) radio.checked = true;
+            updateConditionSelection();
+        });
+    });
+
+    // Upload de imagens
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const previewContainer = document.getElementById('previewContainer');
+    let imagensArray = [];
+
+    uploadArea.addEventListener('click', () => fileInput.click());
+    uploadArea.addEventListener('dragover', e => e.preventDefault());
+    uploadArea.addEventListener('drop', e => {
+        e.preventDefault();
+        processFiles(Array.from(e.dataTransfer.files));
+    });
+    fileInput.addEventListener('change', e => processFiles(Array.from(e.target.files)));
+
+    function processFiles(files) {
+        const imageFiles = files.filter(f => f.type.startsWith('image/'));
+        if (imagensArray.length + imageFiles.length > 5) { 
+            showAlert('Erro', 'Máximo 5 imagens permitidas!', 'error');
+            return; 
+        }
+        imageFiles.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = ev => { 
+                imagensArray.push(ev.target.result); 
+                renderPreviews();
+                showAlert('Imagem adicionada', `${file.name} foi adicionada`, 'success');
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+    
+    function renderPreviews() {
+        previewContainer.innerHTML = '';
+        imagensArray.forEach((src, idx) => {
+            const div = document.createElement('div');
+            div.style.position = 'relative';
+            div.innerHTML = `<img src="${src}" class="preview-img"><span class="remove-img" data-idx="${idx}"><i class="fas fa-times"></i></span>`;
+            previewContainer.appendChild(div);
+        });
+        document.querySelectorAll('.remove-img').forEach(el => {
+            el.addEventListener('click', (e) => {
+                const idx = parseInt(el.getAttribute('data-idx'));
+                imagensArray.splice(idx, 1);
+                renderPreviews();
+                showAlert('Imagem removida', 'Imagem removida com sucesso', 'info');
+            });
+        });
+    }
+
+    // Remover intermediário
+    function setupRemoveButtons() {
+        document.querySelectorAll('.intermediario-tag .fa-times-circle').forEach(icon => {
+            icon.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const tag = icon.closest('.intermediario-tag');
+                const nome = tag.innerText.trim().replace('×', '').trim();
+                tag.remove();
+                showAlert('Intermediário removido', `${nome} foi removido da lista`, 'info');
+            });
+        });
+    }
+    setupRemoveButtons();
+
+    // Adicionar intermediário manual
+    document.getElementById('adicionarIntermediarioBtn').addEventListener('click', () => {
+        const nome = document.getElementById('novoIntermediario').value.trim();
+        if (nome === "") {
+            showAlert('Erro', 'Digite o nome do intermediário!', 'error');
+            return;
+        }
+        adicionarIntermediario(nome);
+        document.getElementById('novoIntermediario').value = '';
+    });
+
+    // Comissão e atualização - AUTOMÁTICO
+    const comissaoInput = document.getElementById('comissao');
+    const comissaoPercentSpan = document.getElementById('comissaoPercent');
+    const precoVendaInput = document.getElementById('precoVenda');
+    
+    // Função para atualizar o resumo automaticamente
+    function atualizarResumo() {
+        let preco = parseFloat(precoVendaInput.value) || 0;
+        let comissaoPercent = parseFloat(comissaoInput.value) || 0;
+        let comissaoValor = (preco * comissaoPercent / 100);
+        let vendedorRecebe = preco - comissaoValor;
+        
+        document.getElementById('resumoPreco').innerText = preco.toFixed(2) + ' MZN';
+        document.getElementById('resumoComissao').innerText = comissaoValor.toFixed(2) + ' MZN';
+        document.getElementById('resumoRecebe').innerText = vendedorRecebe.toFixed(2) + ' MZN';
+        comissaoPercentSpan.innerText = comissaoPercent;
+    }
+    
+    // Eventos para atualizar o resumo automaticamente
+    precoVendaInput.addEventListener('input', atualizarResumo);
+    comissaoInput.addEventListener('input', atualizarResumo);
+    
+    // Avaliação mínima
+    document.querySelectorAll('.avaliacao-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.avaliacao-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            document.getElementById('resumoAvaliacao').innerText = btn.getAttribute('data-nota');
+            showAlert('Avaliação alterada', `Avaliação mínima: ${btn.getAttribute('data-nota')}`, 'info');
+        });
+    });
+
+    // Inicializar resumo
+    atualizarResumo();
+
+    // Botão Limpar Formulário
+    document.getElementById('limparBtn').addEventListener('click', () => {
+        document.getElementById('prodNome').value = '';
+        document.getElementById('categoria').selectedIndex = 0;
+        document.getElementById('subcategoria').value = '';
+        document.getElementById('precoVenda').value = '';
+        document.getElementById('provincia').value = '';
+        document.getElementById('descricao').value = '';
+        document.getElementById('comissao').value = 5;
+        radioNovo.checked = true;
+        updateConditionSelection();
+        document.querySelector('.avaliacao-btn[data-nota="4.5"]').click();
+        imagensArray = []; 
+        renderPreviews();
+        atualizarResumo();
+        showAlert('Formulário limpo', 'Todos os campos foram resetados!', 'success');
+    });
+
+    // Botão Salvar Rascunho
+    document.getElementById('rascunhoBtn').addEventListener('click', () => {
+        const produtoData = {
+            nome: document.getElementById('prodNome').value,
+            categoria: document.getElementById('categoria').value,
+            subcategoria: document.getElementById('subcategoria').value,
+            condicao: document.querySelector('input[name="condicao"]:checked')?.value,
+            preco: document.getElementById('precoVenda').value,
+            provincia: document.getElementById('provincia').value,
+            descricao: document.getElementById('descricao').value,
+            comissao: document.getElementById('comissao').value,
+            avaliacao: document.querySelector('.avaliacao-btn.selected').getAttribute('data-nota'),
+            imagens: imagensArray.length,
+            dataRascunho: new Date().toLocaleString()
+        };
+        localStorage.setItem('blink_rascunho_produto', JSON.stringify(produtoData));
+        showAlert('Rascunho salvo', 'Produto salvo como rascunho!', 'success');
+    });
+
+    // Botão Publicar
+    document.getElementById('publicarBtn').addEventListener('click', () => { 
+        const nomeProduto = document.getElementById('prodNome').value.trim();
+        if (!nomeProduto) { 
+            showAlert('Erro', 'Preencha o nome do produto!', 'error');
+            return; 
+        }
+        if (imagensArray.length === 0) {
+            showAlert('Erro', 'Adicione pelo menos uma imagem!', 'error');
+            return;
+        }
+        const preco = parseFloat(document.getElementById('precoVenda').value);
+        if (!preco || preco <= 0) {
+            showAlert('Erro', 'Informe um preço de venda válido!', 'error');
+            return;
+        }
+        showAlert('Sucesso!', `"${nomeProduto}" foi publicado!`, 'success');
+        localStorage.removeItem('blink_rascunho_produto');
+    });
+
+    // Carregar rascunho
+    function carregarRascunho() {
+        const rascunho = localStorage.getItem('blink_rascunho_produto');
+        if (rascunho) {
+            const data = JSON.parse(rascunho);
+            showAlert('Rascunho encontrado', `Rascunho de "${data.nome || 'produto'}" carregado.`, 'info');
+            document.getElementById('prodNome').value = data.nome || '';
+            document.getElementById('categoria').value = data.categoria || 'Eletrônicos';
+            document.getElementById('subcategoria').value = data.subcategoria || '';
+            document.getElementById('precoVenda').value = data.preco || '';
+            document.getElementById('provincia').value = data.provincia || '';
+            document.getElementById('descricao').value = data.descricao || '';
+            document.getElementById('comissao').value = data.comissao || 5;
+            if (data.condicao === 'Usado') radioUsado.checked = true;
+            else radioNovo.checked = true;
+            updateConditionSelection();
+            atualizarResumo();
+        }
+    }
+    carregarRascunho();
+</script>
+</body>
+</html>
