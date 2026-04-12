@@ -1,0 +1,468 @@
+/* =============================================
+   DASHBOARD VENDEDOR - BLINK
+   Cores baseadas no wireframe
+   ============================================= */
+
+/* Reset básico */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Variáveis de cores do wireframe */
+:root {
+  --azul-escuro: #2d4a6e;
+  --azul-sidebar-active: #3a5f8f;
+  --azul-icone-bg: #e8f0f7;
+  --azul-texto: #2d4a6e;
+  --cinza-fundo: #f7f8fa;
+  --cinza-borda: #e2e8f0;
+  --cinza-texto: #718096;
+  --preto: #1a202c;
+  --branco: #ffffff;
+  --verde-ativo: #38a169;
+  --cinza-pausado: #718096;
+  --azul-link: #3182ce;
+}
+
+/* ROOT */
+.dv-root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: var(--cinza-fundo);
+  color: var(--preto);
+}
+
+/* =============================================
+   NAVBAR
+   ============================================= */
+.dv-navbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 24px;
+  background-color: var(--branco);
+  border-bottom: 1px solid var(--cinza-borda);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.dv-logo {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--azul-escuro);
+  letter-spacing: 1px;
+  min-width: 80px;
+}
+
+.dv-search-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background-color: var(--cinza-fundo);
+  border: 1px solid var(--cinza-borda);
+  border-radius: 8px;
+  padding: 8px 14px;
+  gap: 8px;
+  max-width: 480px;
+}
+
+.dv-search-icon {
+  font-size: 14px;
+  color: var(--cinza-texto);
+}
+
+.dv-search {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+  color: var(--preto);
+  width: 100%;
+}
+
+.dv-search::placeholder {
+  color: var(--cinza-texto);
+}
+
+.dv-nav-icons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.dv-icon-btn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.dv-icon-btn:hover {
+  background-color: var(--cinza-fundo);
+}
+
+.dv-avatar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background-color: var(--azul-escuro);
+  color: var(--branco);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 14px;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* =============================================
+   BODY (sidebar + main)
+   ============================================= */
+.dv-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* =============================================
+   SIDEBAR
+   ============================================= */
+.dv-sidebar {
+  width: 200px;
+  background-color: var(--branco);
+  border-right: 1px solid var(--cinza-borda);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 20px 0;
+  flex-shrink: 0;
+}
+
+.dv-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 12px;
+}
+
+.dv-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--cinza-texto);
+  text-align: left;
+  width: 100%;
+  transition: background 0.2s, color 0.2s;
+}
+
+.dv-menu-item:hover {
+  background-color: var(--cinza-fundo);
+  color: var(--preto);
+}
+
+.dv-menu-item--active {
+  background-color: var(--azul-icone-bg);
+  color: var(--azul-escuro);
+  font-weight: 600;
+}
+
+.dv-menu-icon {
+  font-size: 16px;
+}
+
+.dv-sidebar-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 16px;
+  border-top: 1px solid var(--cinza-borda);
+}
+
+.dv-profile-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: var(--azul-escuro);
+  color: var(--branco);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.dv-profile-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--preto);
+}
+
+.dv-profile-role {
+  font-size: 12px;
+  color: var(--cinza-texto);
+}
+
+/* =============================================
+   MAIN CONTENT
+   ============================================= */
+.dv-main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px 36px;
+}
+
+.dv-header {
+  margin-bottom: 28px;
+}
+
+.dv-welcome {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--preto);
+  margin-bottom: 4px;
+}
+
+.dv-welcome-sub {
+  font-size: 14px;
+  color: var(--cinza-texto);
+}
+
+/* =============================================
+   CARDS DE ESTATÍSTICAS
+   ============================================= */
+.dv-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 36px;
+}
+
+.dv-stat-card {
+  background-color: var(--branco);
+  border: 1px solid var(--cinza-borda);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.dv-stat-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.dv-stat-icon-box {
+  width: 40px;
+  height: 40px;
+  background-color: var(--azul-icone-bg);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.dv-stat-change {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.dv-stat-change--up {
+  color: #38a169;
+  background-color: #f0fff4;
+}
+
+.dv-stat-change--down {
+  color: #e53e3e;
+  background-color: #fff5f5;
+}
+
+.dv-stat-change--stable {
+  color: var(--cinza-texto);
+  background-color: var(--cinza-fundo);
+}
+
+.dv-stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--cinza-texto);
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.dv-stat-value {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--preto);
+}
+
+/* =============================================
+   PRODUTOS RECENTES
+   ============================================= */
+.dv-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.dv-section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--preto);
+}
+
+.dv-ver-todos {
+  font-size: 13px;
+  color: var(--azul-link);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.dv-ver-todos:hover {
+  text-decoration: underline;
+}
+
+.dv-produtos-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.dv-produto-card {
+  background-color: var(--branco);
+  border: 1px solid var(--cinza-borda);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.dv-produto-img-wrapper {
+  position: relative;
+}
+
+.dv-produto-img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  display: block;
+}
+
+.dv-produto-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+}
+
+.dv-badge--ativo {
+  background-color: #38a169;
+  color: var(--branco);
+}
+
+.dv-badge--pausado {
+  background-color: #718096;
+  color: var(--branco);
+}
+
+.dv-produto-info {
+  padding: 16px;
+}
+
+.dv-produto-categoria {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--azul-texto);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.dv-produto-nome-preco {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin: 6px 0 8px;
+}
+
+.dv-produto-nome {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--preto);
+}
+
+.dv-produto-preco {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--preto);
+  white-space: nowrap;
+}
+
+.dv-produto-intermediarios {
+  font-size: 12px;
+  color: var(--cinza-texto);
+  margin-bottom: 12px;
+}
+
+.dv-produto-acoes {
+  display: flex;
+  gap: 8px;
+}
+
+.dv-acao-btn {
+  background: none;
+  border: 1px solid var(--cinza-borda);
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.dv-acao-btn:hover {
+  background-color: var(--cinza-fundo);
+}
+.dv-em-breve {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: #718096;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.dv-em-breve span {
+  font-size: 48px;
+}
+
+.dv-em-breve h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a202c;
+}
