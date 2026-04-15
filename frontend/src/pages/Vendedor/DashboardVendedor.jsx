@@ -1,5 +1,6 @@
 import { useState } from "react";
 import "./DashboardVendedor.css";
+import CadastroProduto from './CadastroProduto';
 import Vendas from "./Vendas";
 
 const stats = [
@@ -134,11 +135,7 @@ export default function DashboardVendedor() {
           )}
 
           {activePage === "Adicionar produto" && (
-            <div className="dv-em-breve">
-              <span>➕</span>
-              <h2>Adicionar Produto</h2>
-              <p>Em construção...</p>
-            </div>
+            <CadastroProduto />
           )}
 
         </main>
