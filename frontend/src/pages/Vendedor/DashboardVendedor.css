@@ -24,6 +24,11 @@
   --verde-ativo: #38a169;
   --cinza-pausado: #718096;
   --azul-link: #3182ce;
+  --laranja-rascunho: #f59e0b;
+  --azul-aguardando: #3b82f6;
+  --verde-publicado: #10b981;
+  --cinza-vendido: #6b7280;
+  --vermelho-removido: #ef4444;
 }
 
 /* ROOT */
@@ -356,6 +361,12 @@
   border: 1px solid var(--cinza-borda);
   border-radius: 12px;
   overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.dv-produto-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .dv-produto-img-wrapper {
@@ -380,13 +391,40 @@
   letter-spacing: 0.5px;
 }
 
+/* Badges originais (mantidos para compatibilidade) */
 .dv-badge--ativo {
-  background-color: #38a169;
+  background-color: var(--verde-ativo);
   color: var(--branco);
 }
 
 .dv-badge--pausado {
-  background-color: #718096;
+  background-color: var(--cinza-pausado);
+  color: var(--branco);
+}
+
+/* Novos badges para os estados da tabela produtos */
+.dv-badge--rascunho {
+  background-color: var(--laranja-rascunho);
+  color: var(--branco);
+}
+
+.dv-badge--aguardando {
+  background-color: var(--azul-aguardando);
+  color: var(--branco);
+}
+
+.dv-badge--publicado {
+  background-color: var(--verde-publicado);
+  color: var(--branco);
+}
+
+.dv-badge--vendido {
+  background-color: var(--cinza-vendido);
+  color: var(--branco);
+}
+
+.dv-badge--removido {
+  background-color: var(--vermelho-removido);
   color: var(--branco);
 }
 
@@ -413,6 +451,8 @@
   font-size: 15px;
   font-weight: 700;
   color: var(--preto);
+  flex: 1;
+  margin-right: 8px;
 }
 
 .dv-produto-preco {
@@ -446,13 +486,17 @@
 .dv-acao-btn:hover {
   background-color: var(--cinza-fundo);
 }
+
+/* =============================================
+   PÁGINAS EM CONSTRUÇÃO
+   ============================================= */
 .dv-em-breve {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 300px;
-  color: #718096;
+  color: var(--cinza-texto);
   gap: 12px;
   font-size: 14px;
 }
@@ -464,5 +508,97 @@
 .dv-em-breve h2 {
   font-size: 20px;
   font-weight: 700;
-  color: #1a202c;
+  color: var(--preto);
+}
+
+/* =============================================
+   LISTA DE PRODUTOS (Página Meus Produtos)
+   ============================================= */
+.dv-produtos-list {
+  width: 100%;
+}
+
+/* =============================================
+   ESTADO DE CARREGAMENTO
+   ============================================= */
+.dv-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-size: 16px;
+  color: var(--cinza-texto);
+}
+
+/* =============================================
+   BOTÃO ADICIONAR PRODUTO (quando não há produtos)
+   ============================================= */
+.dv-empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  background-color: var(--branco);
+  border-radius: 12px;
+  border: 1px solid var(--cinza-borda);
+}
+
+.dv-empty-state p {
+  color: var(--cinza-texto);
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.dv-empty-state button {
+  padding: 10px 20px;
+  background-color: var(--azul-escuro);
+  color: var(--branco);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.dv-empty-state button:hover {
+  background-color: var(--azul-sidebar-active);
+}
+
+/* =============================================
+   RESPONSIVIDADE (opcional)
+   ============================================= */
+@media (max-width: 1024px) {
+  .dv-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .dv-produtos-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .dv-sidebar {
+    width: 70px;
+  }
+  
+  .dv-menu-item span:last-child,
+  .dv-profile-info {
+    display: none;
+  }
+  
+  .dv-menu-item {
+    justify-content: center;
+  }
+  
+  .dv-sidebar-profile {
+    justify-content: center;
+  }
+  
+  .dv-main {
+    padding: 20px;
+  }
+  
+  .dv-stats-grid {
+    grid-template-columns: 1fr;
+  }
 }
