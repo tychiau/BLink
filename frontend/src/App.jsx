@@ -1,12 +1,12 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import CadastroProduto from './pages/CadastroProduto';
+import DashboardVendedor from './pages/Vendedor/DashboardVendedor';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<h1>Bem-vindo ao Blink</h1>} />
-        <Route path="/cadastro-produto" element={<CadastroProduto />} />
+        {/* Rota de Produto */}
+        <Route path="/cadastro-produto" element={<DashboardVendedor />} />
       </Routes>
     </BrowserRouter>
   );

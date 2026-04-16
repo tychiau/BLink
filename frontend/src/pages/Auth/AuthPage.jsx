@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { loginAPI } from "../../api";
 
 function cn(...v) {
   return v.filter(Boolean).join(" ");
@@ -81,12 +82,46 @@ export default function AuthPage() {
   const [showSenha, setShowSenha] = useState(false);
   const [remember, setRemember] = useState(false);
 
-  function handleLogin() {
-  localStorage.setItem("blink_user", JSON.stringify({ perfil, email }));
-  if (perfil === "cliente") navigate("/cliente/dashboard");
-  else if (perfil === "vendedor") navigate("/vendedor/registro");
-  else if (perfil === "intermediario") navigate("/intermediario/dashboard");
-}
+  const handleLogin = async (e) => {
+    // Verificação segura do evento
+    if (e && typeof e.preventDefault === 'function') {
+      e.preventDefault();
+    }
+
+    if (!email || !senha) {
+      alert("Por favor, preencha o email e a senha.");
+      return;
+    }
+
+    try {
+      // CHAMADA CORRECTA: loginAPI já faz o fetch e devolve o json
+      const data = await loginAPI(email, senha);
+
+      if (data.error) {
+        alert(data.error || "Erro ao fazer login");
+        return;
+      }
+
+      // Guardar dados
+      localStorage.setItem("accessToken", data.token);
+      localStorage.setItem("blink_user", JSON.stringify(data.user));
+
+      // Redireccionamento
+      const userRole = data.user.tipo_usuario;
+      if (userRole === "cliente") {
+        navigate("/cliente/dashboard")
+      } else if (userRole === "vendedor") {
+        navigate("/vendedor/dashboard");
+      } else if (userRole === "intermediario") {
+        navigate("/intermediario/dashboard");
+      }
+
+    } catch (error) {
+      console.error("Erro na conexão:", error);
+      alert("Erro ao conectar ao servidor. Verifique se o Backend está ligado.");
+    }
+  }
+
 
   function handleVisitante() {
     localStorage.setItem("blink_user", JSON.stringify({ perfil: "cliente", visitante: true }));
@@ -198,11 +233,12 @@ export default function AuthPage() {
                   />
                   Lembrar de mim
                 </label>
-                <button className="text-xs text-[#1e3a5f] hover:underline">Esqueceu a senha?</button>
+                <button type="button" className="text-xs text-[#1e3a5f] hover:underline">Esqueceu a senha?</button>
               </div>
 
               {/* Botão entrar */}
               <button
+                type="button"
                 onClick={handleLogin}
                 className="w-full py-3 bg-[#1e3a5f] text-white rounded-xl text-sm font-medium hover:bg-[#162d4a] transition-colors"
               >
@@ -233,6 +269,7 @@ export default function AuthPage() {
                 ].map(({ label, color }) => (
                   <button
                     key={label}
+                    type="button"
                     className="flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                   >
                     <span style={{ color, fontWeight: 700, fontSize: 13 }}>■</span> {label}

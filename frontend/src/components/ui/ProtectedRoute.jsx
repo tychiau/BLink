@@ -9,7 +9,8 @@ export default function ProtectedRoute({ children }) {
 
   try {
     const user = JSON.parse(raw);
-    if (!user || !user.perfil) {
+    // Alterado de user.perfil para user.tipo_usuario
+    if (!user || (!user.tipo_usuario && !user.visitante)) {
       return <Navigate to="/auth" replace />;
     }
   } catch {

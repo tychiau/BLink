@@ -18,14 +18,14 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
-app.use(express.urlencoded({ extended: true })); 
+app.use(express.urlencoded({ extended: true }));
 
 // --- ROTAS ---
 
 // Rotas da API
 app.use('/auth', authRoutes);
 app.use('/protected', protectedRoutes);
-app.use('/api', productRoutes); // 
+app.use('/api', productRoutes);
 
 // Rota base atualizada para mostrar o novo endpoint
 app.get('/', (req, res) => {

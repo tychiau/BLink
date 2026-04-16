@@ -1,3 +1,5 @@
+import { useNavigate } from "react-router-dom";
+
 const PRODUTOS = [
   {
     name: "Fone Wireless Ultra G2",
@@ -61,12 +63,15 @@ function Card({ title, children }) {
 }
 
 export default function ClienteDashboardPage() {
+  const navigate = useNavigate();
+
   const user = JSON.parse(localStorage.getItem("blink_user") || "{}");
   const isVisitante = user?.visitante === true;
 
   function handleSair() {
     localStorage.removeItem("blink_user");
-    window.location.href = "/auth";
+    localStorage.removeItem("accessToken");
+    navigate("/auth");
   }
 
   return (
@@ -84,8 +89,12 @@ export default function ClienteDashboardPage() {
             </nav>
           </div>
           <div className="flex items-center gap-3">
-            <div className="hidden text-sm font-semibold text-slate-600 md:block">Marina</div>
-            <div className="h-9 w-9 rounded-full bg-slate-200" />
+            <div className="hidden text-sm font-semibold text-slate-600 md:block">
+              {isVisitante ? "Visitante" : (user.nome || "Utilizador")}
+            </div>
+            <div className="h-9 w-9 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-500">
+              {user.nome ? user.nome.charAt(0).toUpperCase() : "U"}
+            </div>
           </div>
         </div>
       </header>
@@ -94,7 +103,7 @@ export default function ClienteDashboardPage() {
         <aside className="rounded-2xl border border-slate-200 bg-white p-4">
           <div className="mb-3 text-xs font-extrabold text-slate-700">PERFIL DO CLIENTE</div>
           <div className="mb-4 text-xs text-slate-400">
-            {isVisitante ? "Visitante" : "Conta Verificada"}
+            {isVisitante ? "Visitante" : (user.nome || "Utilizador")}
           </div>
           <div className="space-y-1">
             <NavItem active>INÍCIO</NavItem>
@@ -117,7 +126,7 @@ export default function ClienteDashboardPage() {
           <div className="rounded-3xl border border-slate-200 bg-white p-7">
             <div className="text-xs font-extrabold text-slate-500">DASHBOARD DO CLIENTE</div>
             <div className="mt-2 text-3xl font-extrabold leading-tight text-slate-900">
-              Olá, Marina! <br />
+              {user.nome || "Cliente"} <br />
               Pronta para novas descobertas?
             </div>
             <div className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-500">
