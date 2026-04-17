@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './CadastroProduto.css';
+import { productsAPI } from '../../api';
 
 const CadastroProduto = ({ onProductAdded }) => {
   const [usuarioLogado, setUsuarioLogado] = useState({ nome: 'Usuário', email: '', tipo_usuario: '', id: null });
@@ -183,7 +184,6 @@ const CadastroProduto = ({ onProductAdded }) => {
     try {
       const token = localStorage.getItem("accessToken");
       
-      // Buscar o ID do vendedor logado
       const usuarioData = localStorage.getItem("blink_user");
       const usuario = JSON.parse(usuarioData);
       
@@ -193,7 +193,7 @@ const CadastroProduto = ({ onProductAdded }) => {
         return;
       }
 
-      // Mapear categoria para categoria_id
+      // Mapear categoria (opcional - pode ser null)
       const categoriasMap = {
         'Eletrônicos': 1,
         'Moda': 2,
@@ -204,9 +204,8 @@ const CadastroProduto = ({ onProductAdded }) => {
         'Outros': 7
       };
 
-      // Preparar dados no formato correto para o backend
       const produtoData = {
-        vendedor_id: usuario.id.toString(), // Converter para string se necessário
+        vendedor_id: usuario.id,
         categoria_id: categoriasMap[produto.categoria] || null,
         nome: produto.nome,
         descricao: produto.descricao,
@@ -217,21 +216,12 @@ const CadastroProduto = ({ onProductAdded }) => {
       };
 
       console.log("Enviando para o backend:", produtoData);
-      console.log("Token usado:", token);
 
-      const response = await fetch('http://localhost:5173/api/products/produtos', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(produtoData)
-      });
+      const result = await productsAPI.createProduct(token, produtoData);
 
-      const responseData = await response.json();
-      console.log("Resposta do backend:", responseData);
-
-      if (response.ok) {
+      if (result.error) {
+        mostrarAlerta('Erro', result.message || 'Erro ao publicar produto', 'error');
+      } else {
         localStorage.removeItem('blink_rascunho_produto');
         mostrarAlerta('Sucesso!', `"${produto.nome}" foi publicado!`, 'success');
         limparFormulario();
@@ -239,12 +229,10 @@ const CadastroProduto = ({ onProductAdded }) => {
         if (onProductAdded) {
           setTimeout(() => onProductAdded(), 1500);
         }
-      } else {
-        mostrarAlerta('Erro', responseData.message || 'Erro ao publicar produto no servidor', 'error');
       }
     } catch (error) {
       console.error("Erro detalhado:", error);
-      mostrarAlerta('Erro', 'Erro de conexão com o servidor. Verifique se o backend está rodando.', 'error');
+      mostrarAlerta('Erro', 'Erro de conexão com o servidor.', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -269,8 +257,7 @@ const CadastroProduto = ({ onProductAdded }) => {
     mostrarAlerta('Formulário limpo', 'Todos os campos foram resetados!', 'success');
   };
 
-  // Função para truncar texto da descrição na pré-visualização
-  const truncarTexto = (texto, limite = 60) => {
+  const truncarTexto = (texto, limite = 80) => {
     if (!texto) return "Sem descrição";
     if (texto.length <= limite) return texto;
     return texto.substring(0, limite) + "...";
@@ -453,7 +440,6 @@ const CadastroProduto = ({ onProductAdded }) => {
             </div>
           </div>
 
-          {/* PRÉ-VISUALIZAÇÃO CORRIGIDA - TEXTO NÃO ULTRAPASSA OS LIMITES */}
           <div className="dv-cadastro-card">
             <div className="dv-card-title">
               <span className="dv-card-icon">👁️</span>
@@ -481,7 +467,6 @@ const CadastroProduto = ({ onProductAdded }) => {
         </div>
       </div>
 
-      {/* Botões de Ação */}
       <div className="dv-action-buttons">
         <button className="dv-btn dv-btn-outline" onClick={limparFormulario} disabled={isSubmitting}>
           Limpar Formulário
@@ -494,7 +479,6 @@ const CadastroProduto = ({ onProductAdded }) => {
         </button>
       </div>
 
-      {/* Modal de Busca */}
       {showModal && (
         <div className="dv-modal" onClick={() => setShowModal(false)}>
           <div className="dv-modal-content" onClick={(e) => e.stopPropagation()}>

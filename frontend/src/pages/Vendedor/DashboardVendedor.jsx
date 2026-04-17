@@ -2,16 +2,16 @@ import { useState, useEffect } from "react";
 import "./DashboardVendedor.css";
 import CadastroProduto from './CadastroProduto';
 import Vendas from "./Vendas";
+import { productsAPI } from "../../api";
 
 const menuItems = [
   { label: "Dashboard", icon: "⊞" },
   { label: "Vendas", icon: "🛒" },
   { label: "Meus Produtos", icon: "📋" },
   { label: "Intermediários", icon: "👥" },
-  { label: "Adicionar produto", icon: "➕" }, // Botão ADICIONADO de volta na lateral
+  { label: "Adicionar produto", icon: "➕" },
 ];
 
-// Mapeamento de estados para português e cores
 const getEstadoConfig = (estado) => {
   const configs = {
     'rascunho': { label: 'RASCUNHO', class: 'dv-badge--rascunho' },
@@ -25,7 +25,7 @@ const getEstadoConfig = (estado) => {
 
 export default function DashboardVendedor() {
   const [activePage, setActivePage] = useState("Dashboard");
-  const [usuarioLogado, setUsuarioLogado] = useState({ nome: "", email: "", tipo_usuario: "" });
+  const [usuarioLogado, setUsuarioLogado] = useState({ nome: "", email: "", tipo_usuario: "", id: null });
   const [produtos, setProdutos] = useState([]);
   const [stats, setStats] = useState({
     total_produtos: 0,
@@ -43,11 +43,11 @@ export default function DashboardVendedor() {
       setUsuarioLogado({
         nome: usuario.nome || "Usuário",
         email: usuario.email || "",
-        tipo_usuario: usuario.tipo_usuario || ""
+        tipo_usuario: usuario.tipo_usuario || "",
+        id: usuario.id
       });
     }
     
-    // Buscar produtos e estatísticas
     fetchProdutos();
     fetchStats();
   }, []);
@@ -55,17 +55,17 @@ export default function DashboardVendedor() {
   const fetchProdutos = async () => {
     try {
       const token = localStorage.getItem("accessToken");
-      const response = await fetch('http://localhost:5173/api/products/meus-produtos', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      if (!token) {
+        console.error("Token não encontrado");
+        return;
+      }
       
-      if (response.ok) {
-        const data = await response.json();
+      const data = await productsAPI.getMyProducts(token);
+      
+      if (data.error) {
+        console.error("Erro ao buscar produtos:", data.error);
+      } else {
         setProdutos(data);
-      } else if (response.status === 401) {
-        console.error("Não autorizado");
       }
     } catch (error) {
       console.error("Erro ao buscar produtos:", error);
@@ -75,14 +75,17 @@ export default function DashboardVendedor() {
   const fetchStats = async () => {
     try {
       const token = localStorage.getItem("accessToken");
-      const response = await fetch('http://localhost:5173/api/products/meus-produtos/estatisticas', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      if (!token) {
+        console.error("Token não encontrado");
+        setLoading(false);
+        return;
+      }
       
-      if (response.ok) {
-        const data = await response.json();
+      const data = await productsAPI.getStats(token);
+      
+      if (data.error) {
+        console.error("Erro ao buscar estatísticas:", data.error);
+      } else {
         setStats(data);
       }
     } catch (error) {
@@ -95,21 +98,18 @@ export default function DashboardVendedor() {
   const handleStatusChange = async (produtoId, novoEstado) => {
     try {
       const token = localStorage.getItem("accessToken");
-      const response = await fetch(`http://localhost:5173/api/products/produto/${produtoId}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ estado: novoEstado })
-      });
+      const data = await productsAPI.updateStatus(token, produtoId, novoEstado);
       
-      if (response.ok) {
-        fetchProdutos();
-        fetchStats();
+      if (data.error) {
+        alert(data.message || "Erro ao atualizar status");
+      } else {
+        await fetchProdutos();
+        await fetchStats();
+        alert(`Produto ${novoEstado === 'publicado' ? 'publicado' : 'salvo como rascunho'} com sucesso!`);
       }
     } catch (error) {
       console.error("Erro ao atualizar status:", error);
+      alert("Erro ao atualizar status do produto");
     }
   };
 
@@ -117,19 +117,18 @@ export default function DashboardVendedor() {
     if (window.confirm("Tem certeza que deseja remover este produto?")) {
       try {
         const token = localStorage.getItem("accessToken");
-        const response = await fetch(`http://localhost:5173/api/products/produto/${produtoId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+        const data = await productsAPI.deleteProduct(token, produtoId);
         
-        if (response.ok) {
-          fetchProdutos();
-          fetchStats();
+        if (data.error) {
+          alert(data.message || "Erro ao remover produto");
+        } else {
+          await fetchProdutos();
+          await fetchStats();
+          alert("Produto removido com sucesso!");
         }
       } catch (error) {
         console.error("Erro ao remover produto:", error);
+        alert("Erro ao remover produto");
       }
     }
   };
@@ -147,12 +146,11 @@ export default function DashboardVendedor() {
     }
   };
 
-  // Estatísticas para os cards do dashboard
   const statsCards = [
-    { icon: "🗂️", label: "TOTAL DE PRODUTOS", value: stats.total_produtos, change: "", up: null },
-    { icon: "✅", label: "PUBLICADOS", value: stats.produtos_publicados, change: "", up: null },
-    { icon: "⏳", label: "AGUARDANDO", value: stats.aguardando_intermediario, change: "", up: null },
-    { icon: "💰", label: "VENDIDOS", value: stats.vendidos, change: "", up: null },
+    { icon: "🗂️", label: "TOTAL DE PRODUTOS", value: stats.total_produtos || 0 },
+    { icon: "✅", label: "PUBLICADOS", value: stats.produtos_publicados || 0 },
+    { icon: "⏳", label: "AGUARDANDO", value: stats.aguardando_intermediario || 0 },
+    { icon: "💰", label: "VENDIDOS", value: stats.vendidos || 0 },
   ];
 
   if (loading) {
@@ -228,7 +226,7 @@ export default function DashboardVendedor() {
                   return (
                     <div className="dv-produto-card" key={p.id}>
                       <div className="dv-produto-img-wrapper">
-                        <img src={p.foto_url} alt={p.nome} className="dv-produto-img" />
+                        <img src={p.foto_url || '/placeholder-image.jpg'} alt={p.nome} className="dv-produto-img" />
                         <span className={`dv-produto-badge ${estadoConfig.class}`}>{estadoConfig.label}</span>
                       </div>
                       <div className="dv-produto-info">
@@ -256,7 +254,6 @@ export default function DashboardVendedor() {
               {produtos.length === 0 && (
                 <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
                   <p>Você ainda não tem produtos cadastrados.</p>
-                  {/* Botão REMOVIDO daqui */}
                 </div>
               )}
             </>
@@ -275,7 +272,7 @@ export default function DashboardVendedor() {
                   return (
                     <div className="dv-produto-card" key={p.id}>
                       <div className="dv-produto-img-wrapper">
-                        <img src={p.foto_url} alt={p.nome} className="dv-produto-img" />
+                        <img src={p.foto_url || '/placeholder-image.jpg'} alt={p.nome} className="dv-produto-img" />
                         <span className={`dv-produto-badge ${estadoConfig.class}`}>{estadoConfig.label}</span>
                       </div>
                       <div className="dv-produto-info">

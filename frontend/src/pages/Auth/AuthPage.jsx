@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { loginAPI } from "../../api";
+import { loginAPI, registerAPI } from "../../api";
 
 function cn(...v) {
   return v.filter(Boolean).join(" ");
@@ -83,9 +83,22 @@ export default function AuthPage() {
   const [remember, setRemember] = useState(false);
   const [nome, setNome] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Função para redirecionar baseado no papel do usuário
+  const redirectByRole = (userRole) => {
+    if (userRole === "cliente") {
+      navigate("/cliente/dashboard");
+    } else if (userRole === "vendedor") {
+      navigate("/vendedor/dashboard");
+    } else if (userRole === "intermediario") {
+      navigate("/intermediario/dashboard");
+    } else {
+      navigate("/");
+    }
+  };
 
   const handleLogin = async (e) => {
-    // Verificação segura do evento
     if (e && typeof e.preventDefault === 'function') {
       e.preventDefault();
     }
@@ -95,76 +108,125 @@ export default function AuthPage() {
       return;
     }
 
+    setIsLoading(true);
+
     try {
-      // CHAMADA CORRECTA: loginAPI já faz o fetch e devolve o json
       const data = await loginAPI(email, senha);
 
       if (data.error) {
         alert(data.error || "Erro ao fazer login");
+        setIsLoading(false);
         return;
       }
 
-      // Guardar dados
-      localStorage.setItem("accessToken", data.token);
-      localStorage.setItem("blink_user", JSON.stringify(data.user));
-
-      // Redireccionamento
-      const userRole = data.user.tipo_usuario;
-      if (userRole === "cliente") {
-        navigate("/cliente/dashboard")
-      } else if (userRole === "vendedor") {
-        navigate("/vendedor/dashboard");
-      } else if (userRole === "intermediario") {
-        navigate("/intermediario/dashboard");
+      // Verificar se os dados do usuário estão completos
+      if (!data.user || !data.user.id) {
+        console.error("Dados do usuário incompletos:", data.user);
+        alert("Erro: Dados do usuário incompletos. Tente novamente.");
+        setIsLoading(false);
+        return;
       }
+
+      // Guardar dados no localStorage
+      localStorage.setItem("accessToken", data.token);
+      localStorage.setItem("blink_user", JSON.stringify({
+        id: data.user.id,
+        nome: data.user.nome,
+        email: data.user.email,
+        tipo_usuario: data.user.tipo_usuario
+      }));
+
+      console.log("Login bem sucedido! Usuário:", data.user);
+
+      // Redirecionamento
+      redirectByRole(data.user.tipo_usuario);
 
     } catch (error) {
       console.error("Erro na conexão:", error);
       alert("Erro ao conectar ao servidor. Verifique se o Backend está ligado.");
+    } finally {
+      setIsLoading(false);
     }
-  }
+  };
 
-const handleRegister = async () => {
-  if (!email || !nome || !senha || !perfil) {
-    alert("Preencha todos os campos");
-    return;
-  }
-
-  try {
-    const data = await registerAPI({
-      nome,
-      email,
-      senha,
-      tipo_usuario: perfil
-    });
-
-    if (!data || data.error) {
-      alert(data?.error || "Erro no registo");
+  const handleRegister = async () => {
+    if (!nome || !email || !senha || !perfil) {
+      alert("Preencha todos os campos");
       return;
     }
 
-    const { token, user } = data;
+    if (senha !== confirmarSenha) {
+      alert("As senhas não coincidem");
+      return;
+    }
 
-    localStorage.setItem("accessToken", token);
-    localStorage.setItem("blink_user", JSON.stringify(user));
+    if (senha.length < 6) {
+      alert("A senha deve ter pelo menos 6 caracteres");
+      return;
+    }
 
-    redirectByRole(user.tipo_usuario);
+    setIsLoading(true);
 
-  } catch (err) {
-    console.error(err);
-    alert("Erro de conexão com o servidor");
-  }
-};
-  function handleVisitante() {
-    localStorage.setItem("blink_user", JSON.stringify({ perfil: "cliente", visitante: true }));
+    try {
+      const data = await registerAPI({
+        nome: nome,
+        email: email,
+        password: senha,
+        tipo_usuario: perfil
+      });
+
+      if (!data || data.error) {
+        alert(data?.error || "Erro no registo");
+        setIsLoading(false);
+        return;
+      }
+
+      // Verificar se os dados do usuário estão completos
+      if (!data.user || !data.user.id) {
+        console.error("Dados do usuário incompletos:", data.user);
+        alert("Erro: Dados do usuário incompletos. Tente novamente.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Guardar dados no localStorage
+      localStorage.setItem("accessToken", data.token);
+      localStorage.setItem("blink_user", JSON.stringify({
+        id: data.user.id,
+        nome: data.user.nome,
+        email: data.user.email,
+        tipo_usuario: data.user.tipo_usuario
+      }));
+
+      console.log("Registo bem sucedido! Usuário:", data.user);
+
+      // Redirecionamento
+      redirectByRole(data.user.tipo_usuario);
+
+    } catch (err) {
+      console.error("Erro no registo:", err);
+      alert("Erro de conexão com o servidor");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVisitante = () => {
+    localStorage.setItem("blink_user", JSON.stringify({ 
+      id: "visitante",
+      nome: "Visitante",
+      email: "visitante@blink.mz",
+      tipo_usuario: "cliente", 
+      visitante: true 
+    }));
     navigate("/cliente/dashboard");
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       <div className="w-full max-w-5xl bg-white rounded-2xl shadow-sm overflow-hidden grid grid-cols-2">
 
-        {/* ── PAINEL ESQUERDO ── */}
+        {/* PAINEL ESQUERDO */}
         <div className="p-12 border-r border-gray-100">
           <p className="text-xl font-bold text-[#1e3a5f] tracking-tight mb-1">BLINK</p>
           <p className="text-sm text-gray-500 mb-8">A nova era das conexões comerciais em Moçambique.</p>
@@ -272,12 +334,13 @@ const handleRegister = async () => {
               <button
                 type="button"
                 onClick={handleLogin}
-                className="w-full py-3 bg-[#1e3a5f] text-white rounded-xl text-sm font-medium hover:bg-[#162d4a] transition-colors"
+                disabled={isLoading}
+                className="w-full py-3 bg-[#1e3a5f] text-white rounded-xl text-sm font-medium hover:bg-[#162d4a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Entrar na Conta
+                {isLoading ? "A entrar..." : "Entrar na Conta"}
               </button>
 
-              {/* Botão visitante  aqui vamos fazer tipoo só aparece se perfil for cliente */}
+              {/* Botão visitante */}
               {perfil === "cliente" && (
                 <button
                   onClick={handleVisitante}
@@ -310,7 +373,7 @@ const handleRegister = async () => {
               </div>
             </div>
           ) : (
-            /* ── REGISTRAR ── */
+            /* REGISTRAR */
             <div className="space-y-4">
               <div>
                 <p className="text-[10px] font-semibold tracking-widest text-gray-400 mb-2">SELECIONE SEU PERFIL</p>
@@ -333,38 +396,59 @@ const handleRegister = async () => {
                   ))}
                 </div>
               </div>
-            <div>
-  <label className="block text-[10px] font-semibold tracking-widest text-gray-400 mb-1.5">NOME</label>
-  <input type="text" placeholder="Nome" value={nome}
-    onChange={(e) => setNome(e.target.value)}
-    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-[#1e3a5f] placeholder-gray-300" />
-</div>
-<div>
-  <label className="block text-[10px] font-semibold tracking-widest text-gray-400 mb-1.5">EMAIL</label>
-  <input type="email" placeholder="Email" value={email}
-    onChange={(e) => setEmail(e.target.value)}
-    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-[#1e3a5f] placeholder-gray-300" />
-</div>
-<div>
-  <label className="block text-[10px] font-semibold tracking-widest text-gray-400 mb-1.5">SENHA</label>
-  <input type="password" placeholder="Senha" value={senha}
-    onChange={(e) => setSenha(e.target.value)}
-    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-[#1e3a5f] placeholder-gray-300" />
-</div>
-<div>
-  <label className="block text-[10px] font-semibold tracking-widest text-gray-400 mb-1.5">CONFIRMAR SENHA</label>
-  <input type="password" placeholder="Confirmar senha" value={confirmarSenha}
-    onChange={(e) => setConfirmarSenha(e.target.value)}
-    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-[#1e3a5f] placeholder-gray-300" />
-</div>
-              <button type="button" onClick={handleRegister}  className="w-full py-3 bg-[#1e3a5f] text-white rounded-xl text-sm font-medium hover:bg-[#162d4a] transition-colors">
-                Criar conta
+              <div>
+                <label className="block text-[10px] font-semibold tracking-widest text-gray-400 mb-1.5">NOME</label>
+                <input 
+                  type="text" 
+                  placeholder="Nome completo" 
+                  value={nome}
+                  onChange={(e) => setNome(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-[#1e3a5f] placeholder-gray-300" 
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-semibold tracking-widest text-gray-400 mb-1.5">EMAIL</label>
+                <input 
+                  type="email" 
+                  placeholder="email@exemplo.co.mz" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-[#1e3a5f] placeholder-gray-300" 
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-semibold tracking-widest text-gray-400 mb-1.5">SENHA</label>
+                <input 
+                  type="password" 
+                  placeholder="Mínimo 6 caracteres" 
+                  value={senha}
+                  onChange={(e) => setSenha(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-[#1e3a5f] placeholder-gray-300" 
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-semibold tracking-widest text-gray-400 mb-1.5">CONFIRMAR SENHA</label>
+                <input 
+                  type="password" 
+                  placeholder="Confirme sua senha" 
+                  value={confirmarSenha}
+                  onChange={(e) => setConfirmarSenha(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-[#1e3a5f] placeholder-gray-300" 
+                />
+              </div>
+              <button 
+                type="button" 
+                onClick={handleRegister} 
+                disabled={isLoading}
+                className="w-full py-3 bg-[#1e3a5f] text-white rounded-xl text-sm font-medium hover:bg-[#162d4a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? "A criar conta..." : "Criar conta"}
               </button>
             </div>
           )}
         </div>
 
-        {/*  PAINEL DIREITO  */}
+        {/* PAINEL DIREITO */}
         <div className="bg-gray-50 p-12 flex flex-col justify-between">
           <div>
             <h2 className="text-4xl font-extrabold text-gray-900 leading-tight mb-10">
@@ -385,7 +469,6 @@ const handleRegister = async () => {
             </div>
           </div>
 
-          {/* Depoimento feticheee sei la */}
           <div className="mt-8 border border-gray-200 rounded-xl p-4 bg-white">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-9 h-9 rounded-full bg-[#1e3a5f] flex items-center justify-center text-white text-xs font-bold">
