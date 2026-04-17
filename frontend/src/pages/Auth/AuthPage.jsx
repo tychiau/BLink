@@ -81,6 +81,8 @@ export default function AuthPage() {
   const [senha, setSenha] = useState("");
   const [showSenha, setShowSenha] = useState(false);
   const [remember, setRemember] = useState(false);
+  const [nome, setNome] = useState("");
+  const [confirmarSenha, setConfirmarSenha] = useState("");
 
   const handleLogin = async (e) => {
     // Verificação segura do evento
@@ -122,7 +124,37 @@ export default function AuthPage() {
     }
   }
 
+const handleRegister = async () => {
+  if (!email || !nome || !senha || !perfil) {
+    alert("Preencha todos os campos");
+    return;
+  }
 
+  try {
+    const data = await registerAPI({
+      nome,
+      email,
+      senha,
+      tipo_usuario: perfil
+    });
+
+    if (!data || data.error) {
+      alert(data?.error || "Erro no registo");
+      return;
+    }
+
+    const { token, user } = data;
+
+    localStorage.setItem("accessToken", token);
+    localStorage.setItem("blink_user", JSON.stringify(user));
+
+    redirectByRole(user.tipo_usuario);
+
+  } catch (err) {
+    console.error(err);
+    alert("Erro de conexão com o servidor");
+  }
+};
   function handleVisitante() {
     localStorage.setItem("blink_user", JSON.stringify({ perfil: "cliente", visitante: true }));
     navigate("/cliente/dashboard");
@@ -301,19 +333,31 @@ export default function AuthPage() {
                   ))}
                 </div>
               </div>
-              {["Nome", "Email", "Senha", "Confirmar senha"].map((lbl) => (
-                <div key={lbl}>
-                  <label className="block text-[10px] font-semibold tracking-widest text-gray-400 mb-1.5">
-                    {lbl.toUpperCase()}
-                  </label>
-                  <input
-                    type={lbl.includes("Senha") ? "password" : "text"}
-                    placeholder={lbl}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-[#1e3a5f] placeholder-gray-300"
-                  />
-                </div>
-              ))}
-              <button className="w-full py-3 bg-[#1e3a5f] text-white rounded-xl text-sm font-medium hover:bg-[#162d4a] transition-colors">
+            <div>
+  <label className="block text-[10px] font-semibold tracking-widest text-gray-400 mb-1.5">NOME</label>
+  <input type="text" placeholder="Nome" value={nome}
+    onChange={(e) => setNome(e.target.value)}
+    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-[#1e3a5f] placeholder-gray-300" />
+</div>
+<div>
+  <label className="block text-[10px] font-semibold tracking-widest text-gray-400 mb-1.5">EMAIL</label>
+  <input type="email" placeholder="Email" value={email}
+    onChange={(e) => setEmail(e.target.value)}
+    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-[#1e3a5f] placeholder-gray-300" />
+</div>
+<div>
+  <label className="block text-[10px] font-semibold tracking-widest text-gray-400 mb-1.5">SENHA</label>
+  <input type="password" placeholder="Senha" value={senha}
+    onChange={(e) => setSenha(e.target.value)}
+    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-[#1e3a5f] placeholder-gray-300" />
+</div>
+<div>
+  <label className="block text-[10px] font-semibold tracking-widest text-gray-400 mb-1.5">CONFIRMAR SENHA</label>
+  <input type="password" placeholder="Confirmar senha" value={confirmarSenha}
+    onChange={(e) => setConfirmarSenha(e.target.value)}
+    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-[#1e3a5f] placeholder-gray-300" />
+</div>
+              <button type="button" onClick={handleRegister}  className="w-full py-3 bg-[#1e3a5f] text-white rounded-xl text-sm font-medium hover:bg-[#162d4a] transition-colors">
                 Criar conta
               </button>
             </div>
