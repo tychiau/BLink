@@ -3,14 +3,14 @@
    Cores baseadas no wireframe
    ============================================= */
 
-/* Reset básico */
+/* Reset basico */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-/* Variáveis de cores do wireframe */
+/* Variaveis de cores do wireframe */
 :root {
   --azul-escuro: #2d4a6e;
   --azul-sidebar-active: #3a5f8f;
@@ -250,7 +250,7 @@
 }
 
 /* =============================================
-   CARDS DE ESTATÍSTICAS
+   CARDS DE ESTATISTICAS
    ============================================= */
 .dv-stats-grid {
   display: grid;
@@ -471,6 +471,7 @@
 .dv-produto-acoes {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .dv-acao-btn {
@@ -488,7 +489,146 @@
 }
 
 /* =============================================
-   PÁGINAS EM CONSTRUÇÃO
+   MODAL DE EDICAO
+   ============================================= */
+.dv-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dv-modal-content {
+  background-color: var(--branco);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.dv-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--cinza-borda);
+}
+
+.dv-modal-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--preto);
+  margin: 0;
+}
+
+.dv-modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--cinza-texto);
+  padding: 0;
+  line-height: 1;
+}
+
+.dv-modal-close:hover {
+  color: var(--preto);
+}
+
+.dv-modal-body {
+  padding: 20px;
+}
+
+.dv-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--cinza-borda);
+}
+
+.dv-btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.dv-btn-outline {
+  background: transparent;
+  border: 1px solid var(--cinza-borda);
+  color: var(--cinza-texto);
+}
+
+.dv-btn-outline:hover {
+  background-color: var(--cinza-fundo);
+}
+
+.dv-btn-primary {
+  background-color: var(--azul-escuro);
+  color: var(--branco);
+}
+
+.dv-btn-primary:hover {
+  background-color: var(--azul-sidebar-active);
+}
+
+.dv-form-group {
+  margin-bottom: 16px;
+}
+
+.dv-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cinza-texto);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dv-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--cinza-borda);
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.dv-input:focus {
+  border-color: var(--azul-escuro);
+}
+
+.dv-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--cinza-borda);
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.dv-textarea:focus {
+  border-color: var(--azul-escuro);
+}
+
+/* =============================================
+   PAGINAS EM CONSTRUCAO
    ============================================= */
 .dv-em-breve {
   display: flex;
@@ -512,7 +652,7 @@
 }
 
 /* =============================================
-   LISTA DE PRODUTOS (Página Meus Produtos)
+   LISTA DE PRODUTOS (Pagina Meus Produtos)
    ============================================= */
 .dv-produtos-list {
   width: 100%;
@@ -531,7 +671,7 @@
 }
 
 /* =============================================
-   BOTÃO ADICIONAR PRODUTO (quando não há produtos)
+   BOTAO ADICIONAR PRODUTO (quando nao ha produtos)
    ============================================= */
 .dv-empty-state {
   text-align: center;
@@ -564,7 +704,7 @@
 }
 
 /* =============================================
-   RESPONSIVIDADE (opcional)
+   RESPONSIVIDADE
    ============================================= */
 @media (max-width: 1024px) {
   .dv-stats-grid {
@@ -601,4 +741,224 @@
   .dv-stats-grid {
     grid-template-columns: 1fr;
   }
+  
+  .dv-produto-acoes {
+    flex-direction: column;
+  }
+  
+  .dv-produto-acoes button {
+    width: 100%;
+    margin-right: 0 !important;
+    margin-bottom: 8px;
+  }
+  /* =============================================
+   TOAST NOTIFICATIONS
+   ============================================= */
+.dv-toast-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 2000;
+  animation: slideIn 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.dv-toast-notification.success {
+  background-color: #10B981;
+  color: white;
+}
+
+.dv-toast-notification.error {
+  background-color: #EF4444;
+  color: white;
+}
+
+.dv-toast-notification.info {
+  background-color: #3B82F6;
+  color: white;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+/* Modal de Edicao */
+.dv-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dv-modal-content {
+  background-color: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.dv-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.dv-modal-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.dv-modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #718096;
+}
+
+.dv-modal-body {
+  padding: 20px;
+}
+
+.dv-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.dv-btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+}
+
+.dv-btn-outline {
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  color: #718096;
+}
+
+.dv-btn-outline:hover {
+  background-color: #f7f8fa;
+}
+
+.dv-btn-primary {
+  background-color: #4F46E5;
+  color: white;
+}
+
+.dv-btn-primary:hover {
+  background-color: #4338ca;
+}
+
+.dv-form-group {
+  margin-bottom: 16px;
+}
+
+.dv-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #718096;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dv-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+}
+
+.dv-input:focus {
+  border-color: #4F46E5;
+}
+
+.dv-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.dv-textarea:focus {
+  border-color: #4F46E5;
+}
+
+.dv-hint {
+  font-size: 11px;
+  color: #718096;
+  margin-top: 4px;
+  display: block;
+}
+
+/* Toast Notifications */
+.dv-toast-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 2000;
+  animation: slideIn 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.dv-toast-notification.success {
+  background-color: #10B981;
+  color: white;
+}
+
+.dv-toast-notification.error {
+  background-color: #EF4444;
+  color: white;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
 }

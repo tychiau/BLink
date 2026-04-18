@@ -3,10 +3,10 @@ import './CadastroProduto.css';
 import { productsAPI } from '../../api';
 
 const CadastroProduto = ({ onProductAdded }) => {
-  const [usuarioLogado, setUsuarioLogado] = useState({ nome: 'Usuário', email: '', tipo_usuario: '', id: null });
+  const [usuarioLogado, setUsuarioLogado] = useState({ nome: 'Usuario', email: '', tipo_usuario: '', id: null });
   const [produto, setProduto] = useState({
     nome: '',
-    categoria: 'Eletrônicos',
+    categoria: 'Eletronicos',
     subcategoria: '',
     condicao: 'Novo',
     preco: '',
@@ -28,7 +28,7 @@ const CadastroProduto = ({ onProductAdded }) => {
 
   const intermediariosDisponiveis = [
     { id: 1, nome: "Carlos Mendes", email: "carlos@blink.mz", telefone: "84 123 4567", avaliacao: 4.8, cidade: "Maputo" },
-    { id: 2, nome: "Maria João", email: "maria@blink.mz", telefone: "85 234 5678", avaliacao: 4.9, cidade: "Matola" },
+    { id: 2, nome: "Maria Joao", email: "maria@blink.mz", telefone: "85 234 5678", avaliacao: 4.9, cidade: "Matola" },
     { id: 3, nome: "Paulo Santos", email: "paulo@blink.mz", telefone: "86 345 6789", avaliacao: 4.7, cidade: "Beira" },
     { id: 4, nome: "Fernanda Lima", email: "fernanda@blink.mz", telefone: "87 456 7890", avaliacao: 5.0, cidade: "Nampula" },
   ];
@@ -43,7 +43,7 @@ const CadastroProduto = ({ onProductAdded }) => {
     if (usuarioData) {
       const usuario = JSON.parse(usuarioData);
       setUsuarioLogado({
-        nome: usuario.nome || "Usuário",
+        nome: usuario.nome || "Usuario",
         email: usuario.email || "",
         tipo_usuario: usuario.tipo_usuario || "",
         id: usuario.id
@@ -81,7 +81,7 @@ const CadastroProduto = ({ onProductAdded }) => {
   const handleImagemUpload = (e) => {
     const files = Array.from(e.target.files);
     if (imagens.length + files.length > 5) {
-      mostrarAlerta('Erro', 'Máximo 5 imagens permitidas!', 'error');
+      mostrarAlerta('Erro', 'Maximo 5 imagens permitidas!', 'error');
       return;
     }
     files.forEach(file => {
@@ -117,22 +117,22 @@ const CadastroProduto = ({ onProductAdded }) => {
 
   const adicionarIntermediario = (nome) => {
     if (intermediariosSelecionados.includes(nome)) {
-      mostrarAlerta('Aviso', `${nome} já está na lista!`, 'info');
+      mostrarAlerta('Aviso', `${nome} ja esta na lista!`, 'info');
       return false;
     }
     setIntermediariosSelecionados([...intermediariosSelecionados, nome]);
-    mostrarAlerta('Intermediário adicionado', `${nome} foi adicionado à lista`, 'success');
+    mostrarAlerta('Intermediario adicionado', `${nome} foi adicionado a lista`, 'success');
     return true;
   };
 
   const removerIntermediario = (nome) => {
     setIntermediariosSelecionados(intermediariosSelecionados.filter(i => i !== nome));
-    mostrarAlerta('Intermediário removido', `${nome} foi removido da lista`, 'info');
+    mostrarAlerta('Intermediario removido', `${nome} foi removido da lista`, 'info');
   };
 
   const adicionarIntermediarioManual = () => {
     if (!novoIntermediario.trim()) {
-      mostrarAlerta('Erro', 'Digite o nome do intermediário!', 'error');
+      mostrarAlerta('Erro', 'Digite o nome do intermediario!', 'error');
       return;
     }
     adicionarIntermediario(novoIntermediario.trim());
@@ -175,7 +175,7 @@ const CadastroProduto = ({ onProductAdded }) => {
       return;
     }
     if (!produto.preco || precoBruto <= 0) {
-      mostrarAlerta('Erro', 'Informe um preço de venda válido!', 'error');
+      mostrarAlerta('Erro', 'Informe um preco de venda valido!', 'error');
       return;
     }
 
@@ -188,16 +188,15 @@ const CadastroProduto = ({ onProductAdded }) => {
       const usuario = JSON.parse(usuarioData);
       
       if (!usuario || !usuario.id) {
-        mostrarAlerta('Erro', 'Usuário não identificado. Faça login novamente.', 'error');
+        mostrarAlerta('Erro', 'Usuario nao identificado. Faca login novamente.', 'error');
         setIsSubmitting(false);
         return;
       }
 
-      // Mapear categoria (opcional - pode ser null)
       const categoriasMap = {
-        'Eletrônicos': 1,
+        'Eletronicos': 1,
         'Moda': 2,
-        'Casa & Decoração': 3,
+        'Casa & Decoracao': 3,
         'Esportes': 4,
         'Livros': 5,
         'Automotivo': 6,
@@ -211,7 +210,7 @@ const CadastroProduto = ({ onProductAdded }) => {
         descricao: produto.descricao,
         preco_minimo: precoBruto,
         comissao_intermediario: comissaoValor,
-        estado: 'rascunho',
+        estado: 'publicado',
         foto_produto: imagens[0] || null
       };
 
@@ -232,7 +231,7 @@ const CadastroProduto = ({ onProductAdded }) => {
       }
     } catch (error) {
       console.error("Erro detalhado:", error);
-      mostrarAlerta('Erro', 'Erro de conexão com o servidor.', 'error');
+      mostrarAlerta('Erro', 'Erro de conexao com o servidor.', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -241,7 +240,7 @@ const CadastroProduto = ({ onProductAdded }) => {
   const limparFormulario = () => {
     setProduto({
       nome: '',
-      categoria: 'Eletrônicos',
+      categoria: 'Eletronicos',
       subcategoria: '',
       condicao: 'Novo',
       preco: '',
@@ -254,11 +253,11 @@ const CadastroProduto = ({ onProductAdded }) => {
     setPreviewImagens([]);
     setPreviewImage('');
     setIntermediariosSelecionados([]);
-    mostrarAlerta('Formulário limpo', 'Todos os campos foram resetados!', 'success');
+    mostrarAlerta('Formulario limpo', 'Todos os campos foram resetados!', 'success');
   };
 
   const truncarTexto = (texto, limite = 80) => {
-    if (!texto) return "Sem descrição";
+    if (!texto) return "Sem descricao";
     if (texto.length <= limite) return texto;
     return texto.substring(0, limite) + "...";
   };
@@ -285,8 +284,8 @@ const CadastroProduto = ({ onProductAdded }) => {
         <div className="dv-cadastro-col">
           <div className="dv-cadastro-card">
             <div className="dv-card-title">
-              <span className="dv-card-icon">📋</span>
-              Informações Básicas
+              <span className="dv-card-icon"></span>
+              Informacoes Basicas
             </div>
             <div className="dv-form-group">
               <label className="dv-label">NOME DO PRODUTO *</label>
@@ -296,9 +295,9 @@ const CadastroProduto = ({ onProductAdded }) => {
               <div className="dv-form-group">
                 <label className="dv-label">CATEGORIA</label>
                 <select name="categoria" className="dv-select" value={produto.categoria} onChange={handleInputChange}>
-                  <option>Eletrônicos</option>
+                  <option>Eletronicos</option>
                   <option>Moda</option>
-                  <option>Casa & Decoração</option>
+                  <option>Casa & Decoracao</option>
                   <option>Esportes</option>
                   <option>Livros</option>
                   <option>Automotivo</option>
@@ -311,25 +310,25 @@ const CadastroProduto = ({ onProductAdded }) => {
               </div>
             </div>
             
-            <div className="dv-section-label">CONDIÇÃO</div>
+            <div className="dv-section-label">CONDICAO</div>
             <div className="dv-condition-row">
               <div className={`dv-condition-card ${produto.condicao === 'Novo' ? 'dv-selected' : ''}`} onClick={() => handleCondicaoChange('Novo')}>
-                <span>✨</span> Novo
+                <span></span> Novo
               </div>
               <div className={`dv-condition-card ${produto.condicao === 'Usado' ? 'dv-selected' : ''}`} onClick={() => handleCondicaoChange('Usado')}>
-                <span>🔄</span> Usado
+                <span></span> Usado
               </div>
             </div>
           </div>
 
           <div className="dv-cadastro-card">
             <div className="dv-card-title">
-              <span className="dv-card-icon">🖼️</span>
+              <span className="dv-card-icon"></span>
               Imagens do Produto
             </div>
             <div className="dv-upload-area" onClick={() => document.getElementById('dv-file-input').click()}>
-              <span className="dv-upload-icon">📸</span>
-              <p>Clique para selecionar imagens<br /><small>Máximo 5 imagens</small></p>
+              <span className="dv-upload-icon"></span>
+              <p>Clique para selecionar imagens<br /><small>Maximo 5 imagens</small></p>
               <input type="file" id="dv-file-input" multiple accept="image/*" style={{ display: 'none' }} onChange={handleImagemUpload} />
             </div>
             <div className="dv-preview-grid">
@@ -344,19 +343,19 @@ const CadastroProduto = ({ onProductAdded }) => {
 
           <div className="dv-cadastro-card">
             <div className="dv-card-title">
-              <span className="dv-card-icon">💰</span>
-              Detalhes e Preço
+              <span className="dv-card-icon"></span>
+              Detalhes e Preco
             </div>
             <div className="dv-form-group">
-              <label className="dv-label">PREÇO DE VENDA (MZN) *</label>
+              <label className="dv-label">PRECO DE VENDA (MZN) *</label>
               <input type="number" name="preco" className="dv-input" value={produto.preco} onChange={handleInputChange} placeholder="0,00" step="any" />
             </div>
             <div className="dv-form-group">
-              <label className="dv-label">PROVÍNCIA / CIDADE</label>
+              <label className="dv-label">PROVINCIA / CIDADE</label>
               <input type="text" name="provincia" className="dv-input" value={produto.provincia} onChange={handleInputChange} placeholder="Ex: Maputo" />
             </div>
             <div className="dv-form-group">
-              <label className="dv-label">DESCRIÇÃO DETALHADA</label>
+              <label className="dv-label">DESCRICAO DETALHADA</label>
               <textarea name="descricao" className="dv-textarea" rows="4" value={produto.descricao} onChange={handleInputChange} placeholder="Descreva seu produto..."></textarea>
             </div>
           </div>
@@ -366,12 +365,12 @@ const CadastroProduto = ({ onProductAdded }) => {
         <div className="dv-cadastro-col">
           <div className="dv-cadastro-card">
             <div className="dv-card-title">
-              <span className="dv-card-icon">🤝</span>
-              Configurações de Intermediário
+              <span className="dv-card-icon"></span>
+              Configuracoes de Intermediario
             </div>
             
             <div className="dv-toggle-row">
-              <span>🌍 Permitir qualquer intermediário</span>
+              <span>Permitir qualquer intermediario</span>
               <label className="dv-switch">
                 <input type="checkbox" defaultChecked />
                 <span className="dv-slider"></span>
@@ -379,7 +378,7 @@ const CadastroProduto = ({ onProductAdded }) => {
             </div>
 
             <div className="dv-form-group">
-              <label className="dv-label">COMISSÃO</label>
+              <label className="dv-label">COMISSAO</label>
               <div className="dv-comissao-row">
                 <span>Percentual sobre venda</span>
                 <div className="dv-comissao-input">
@@ -387,11 +386,11 @@ const CadastroProduto = ({ onProductAdded }) => {
                   <span>%</span>
                 </div>
               </div>
-              <small className="dv-hint">A comissão média nesta categoria é de 4-7%</small>
+              <small className="dv-hint">A comissao media nesta categoria e de 4-7%</small>
             </div>
 
             <div className="dv-form-group">
-              <label className="dv-label">AVALIAÇÃO MÍNIMA</label>
+              <label className="dv-label">AVALIACAO MINIMA</label>
               <div className="dv-rating-buttons">
                 {['1.0', '2.5', '4.0', '4.5', '5.0'].map(nota => (
                   <button key={nota} className={`dv-rating-btn ${avaliacaoMinima === nota ? 'dv-active' : ''}`} onClick={() => setAvaliacaoMinima(nota)}>{nota}</button>
@@ -400,7 +399,7 @@ const CadastroProduto = ({ onProductAdded }) => {
             </div>
 
             <div className="dv-form-group">
-              <label className="dv-label">INTERMEDIÁRIOS SELECIONADOS</label>
+              <label className="dv-label">INTERMEDIARIOS SELECIONADOS</label>
               <div className="dv-intermediarios-list">
                 {intermediariosSelecionados.map(nome => (
                   <div key={nome} className="dv-intermediario-tag">
@@ -410,10 +409,10 @@ const CadastroProduto = ({ onProductAdded }) => {
                 ))}
               </div>
               <div className="dv-add-intermediario">
-                <input type="text" placeholder="Nome do intermediário" value={novoIntermediario} onChange={(e) => setNovoIntermediario(e.target.value)} />
+                <input type="text" placeholder="Nome do intermediario" value={novoIntermediario} onChange={(e) => setNovoIntermediario(e.target.value)} />
                 <button className="dv-btn-small" onClick={adicionarIntermediarioManual}>Adicionar</button>
               </div>
-              <button className="dv-search-link" onClick={() => setShowModal(true)}>Buscar intermediários</button>
+              <button className="dv-search-link" onClick={() => setShowModal(true)}>Buscar intermediarios</button>
             </div>
           </div>
 
@@ -423,11 +422,11 @@ const CadastroProduto = ({ onProductAdded }) => {
               RESUMO DA VENDA
             </div>
             <div className="dv-resumo-linha">
-              <span>Preço Bruto</span>
+              <span>Preco Bruto</span>
               <span>{precoBruto.toFixed(2)} MZN</span>
             </div>
             <div className="dv-resumo-linha">
-              <span>Comissão ({comissao}%)</span>
+              <span>Comissao ({comissao}%)</span>
               <span>{comissaoValor.toFixed(2)} MZN</span>
             </div>
             <div className="dv-resumo-linha">
@@ -442,15 +441,33 @@ const CadastroProduto = ({ onProductAdded }) => {
 
           <div className="dv-cadastro-card">
             <div className="dv-card-title">
-              <span className="dv-card-icon">👁️</span>
-              Pré-visualização
+              <span className="dv-card-icon"></span>
+              Pre-visualizacao
             </div>
             <div className="dv-product-preview">
               <div className="dv-preview-img">
                 {previewImage ? (
-                  <img src={previewImage} alt="Preview" />
+                  <img 
+                    src={previewImage} 
+                    alt="Preview" 
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      borderRadius: '8px'
+                    }}
+                  />
                 ) : (
-                  <div className="dv-no-image">🖼️ Sem imagem</div>
+                  <div className="dv-no-image" style={{
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: '#f0f0f0',
+                    borderRadius: '8px',
+                    color: '#999'
+                  }}>Sem imagem</div>
                 )}
               </div>
               <div className="dv-preview-details">
@@ -469,7 +486,7 @@ const CadastroProduto = ({ onProductAdded }) => {
 
       <div className="dv-action-buttons">
         <button className="dv-btn dv-btn-outline" onClick={limparFormulario} disabled={isSubmitting}>
-          Limpar Formulário
+          Limpar Formulario
         </button>
         <button className="dv-btn dv-btn-secondary" onClick={salvarRascunho} disabled={isSubmitting}>
           Salvar como Rascunho
@@ -483,7 +500,7 @@ const CadastroProduto = ({ onProductAdded }) => {
         <div className="dv-modal" onClick={() => setShowModal(false)}>
           <div className="dv-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="dv-modal-header">
-              <h3>Buscar Intermediários</h3>
+              <h3>Buscar Intermediarios</h3>
               <button className="dv-modal-close" onClick={() => setShowModal(false)}>×</button>
             </div>
             <div className="dv-modal-search">
@@ -500,7 +517,7 @@ const CadastroProduto = ({ onProductAdded }) => {
                 </div>
               ))}
               {intermediariosFiltrados.length === 0 && (
-                <div className="dv-no-results">Nenhum intermediário encontrado</div>
+                <div className="dv-no-results">Nenhum intermediario encontrado</div>
               )}
             </div>
           </div>

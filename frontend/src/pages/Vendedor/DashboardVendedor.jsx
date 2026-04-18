@@ -8,7 +8,7 @@ const menuItems = [
   { label: "Dashboard", icon: "⊞" },
   { label: "Vendas", icon: "🛒" },
   { label: "Meus Produtos", icon: "📋" },
-  { label: "Intermediários", icon: "👥" },
+  { label: "Intermediarios", icon: "👥" },
   { label: "Adicionar produto", icon: "➕" },
 ];
 
@@ -35,13 +35,24 @@ export default function DashboardVendedor() {
     vendidos: 0
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [notification, setNotification] = useState({ show: false, message: '', type: '' });
+  const [comissaoPercentual, setComissaoPercentual] = useState(5);
+
+  const showNotification = (message, type = 'success') => {
+    setNotification({ show: true, message, type });
+    setTimeout(() => setNotification({ show: false, message: '', type: '' }), 3000);
+  };
 
   useEffect(() => {
     const usuarioData = localStorage.getItem("blink_user");
     if (usuarioData) {
       const usuario = JSON.parse(usuarioData);
       setUsuarioLogado({
-        nome: usuario.nome || "Usuário",
+        nome: usuario.nome || "Usuario",
         email: usuario.email || "",
         tipo_usuario: usuario.tipo_usuario || "",
         id: usuario.id
@@ -54,9 +65,11 @@ export default function DashboardVendedor() {
 
   const fetchProdutos = async () => {
     try {
+      setError(null);
       const token = localStorage.getItem("accessToken");
       if (!token) {
-        console.error("Token não encontrado");
+        console.error("Token nao encontrado");
+        setError("Token de autenticacao nao encontrado");
         return;
       }
       
@@ -64,19 +77,21 @@ export default function DashboardVendedor() {
       
       if (data.error) {
         console.error("Erro ao buscar produtos:", data.error);
+        setError(data.message || "Erro ao buscar produtos");
       } else {
-        setProdutos(data);
+        setProdutos(Array.isArray(data) ? data : []);
       }
     } catch (error) {
       console.error("Erro ao buscar produtos:", error);
+      setError(error.message || "Erro de conexao ao buscar produtos");
     }
   };
-
+  
   const fetchStats = async () => {
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) {
-        console.error("Token não encontrado");
+        console.error("Token nao encontrado");
         setLoading(false);
         return;
       }
@@ -84,15 +99,29 @@ export default function DashboardVendedor() {
       const data = await productsAPI.getStats(token);
       
       if (data.error) {
-        console.error("Erro ao buscar estatísticas:", data.error);
+        console.error("Erro ao buscar estatisticas:", data.error);
       } else {
-        setStats(data);
+        setStats({
+          total_produtos: data.total_produtos || 0,
+          produtos_publicados: data.produtos_publicados || 0,
+          aguardando_intermediario: data.aguardando_intermediario || 0,
+          rascunhos: data.rascunhos || 0,
+          vendidos: data.vendidos || 0
+        });
       }
     } catch (error) {
-      console.error("Erro ao buscar estatísticas:", error);
+      console.error("Erro ao buscar estatisticas:", error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchProdutos();
+    await fetchStats();
+    setRefreshing(false);
+    showNotification("Produtos recarregados com sucesso!", "success");
   };
 
   const handleStatusChange = async (produtoId, novoEstado) => {
@@ -101,15 +130,18 @@ export default function DashboardVendedor() {
       const data = await productsAPI.updateStatus(token, produtoId, novoEstado);
       
       if (data.error) {
-        alert(data.message || "Erro ao atualizar status");
+        showNotification(data.message || "Erro ao atualizar status", "error");
       } else {
         await fetchProdutos();
         await fetchStats();
-        alert(`Produto ${novoEstado === 'publicado' ? 'publicado' : 'salvo como rascunho'} com sucesso!`);
+        const mensagem = novoEstado === 'publicado' 
+          ? 'Produto publicado com sucesso!' 
+          : 'Produto guardado como rascunho';
+        showNotification(mensagem, "success");
       }
     } catch (error) {
       console.error("Erro ao atualizar status:", error);
-      alert("Erro ao atualizar status do produto");
+      showNotification("Erro ao atualizar status do produto", "error");
     }
   };
 
@@ -120,17 +152,105 @@ export default function DashboardVendedor() {
         const data = await productsAPI.deleteProduct(token, produtoId);
         
         if (data.error) {
-          alert(data.message || "Erro ao remover produto");
+          showNotification(data.message || "Erro ao remover produto", "error");
         } else {
           await fetchProdutos();
           await fetchStats();
-          alert("Produto removido com sucesso!");
+          showNotification("Produto removido com sucesso!", "success");
         }
       } catch (error) {
         console.error("Erro ao remover produto:", error);
-        alert("Erro ao remover produto");
+        showNotification("Erro ao remover produto", "error");
       }
     }
+  };
+
+  const handleEditProduct = (produto) => {
+    const percentual = produto.preco_minimo > 0 
+      ? (produto.comissao_intermediario / produto.preco_minimo) * 100 
+      : 5;
+    
+    setComissaoPercentual(Math.round(percentual * 10) / 10);
+    setEditingProduct({ ...produto });
+    setShowEditModal(true);
+  };
+
+  const handlePrecoChange = (novoPreco) => {
+    const preco = parseFloat(novoPreco) || 0;
+    const novaComissao = (preco * comissaoPercentual) / 100;
+    
+    setEditingProduct({
+      ...editingProduct,
+      preco_minimo: preco,
+      comissao_intermediario: novaComissao
+    });
+  };
+
+  const handleComissaoPercentualChange = (percentual) => {
+    const novoPercentual = parseFloat(percentual) || 0;
+    setComissaoPercentual(novoPercentual);
+    
+    const preco = editingProduct?.preco_minimo || 0;
+    const novaComissao = (preco * novoPercentual) / 100;
+    
+    setEditingProduct({
+      ...editingProduct,
+      comissao_intermediario: novaComissao
+    });
+  };
+
+  const handleUpdateProduct = async () => {
+    if (!editingProduct) return;
+    
+    if (!editingProduct.nome || editingProduct.nome.trim() === '') {
+      showNotification("O nome do produto e obrigatorio", "error");
+      return;
+    }
+    
+    if (!editingProduct.preco_minimo || editingProduct.preco_minimo <= 0) {
+      showNotification("O preco deve ser maior que zero", "error");
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        showNotification("Token de autenticacao nao encontrado", "error");
+        return;
+      }
+      
+      const productData = {
+        nome: editingProduct.nome,
+        descricao: editingProduct.descricao || '',
+        preco_minimo: parseFloat(editingProduct.preco_minimo),
+        comissao_intermediario: parseFloat(editingProduct.comissao_intermediario || 0),
+        categoria_id: editingProduct.categoria_id || null
+      };
+      
+      console.log('Enviando atualizacao:', productData);
+      
+      const data = await productsAPI.updateProduct(token, editingProduct.id, productData);
+      
+      if (data.error) {
+        showNotification(data.message || "Erro ao atualizar produto", "error");
+      } else {
+        await fetchProdutos();
+        await fetchStats();
+        setShowEditModal(false);
+        setEditingProduct(null);
+        showNotification("Produto atualizado com sucesso!", "success");
+      }
+    } catch (error) {
+      console.error("Erro ao atualizar produto:", error);
+      showNotification("Erro ao atualizar produto", "error");
+    }
+  };
+
+  const handleProductAdded = () => {
+    fetchProdutos();
+    fetchStats();
+    setActivePage("Meus Produtos");
+    showNotification("Produto adicionado com sucesso!", "success");
   };
 
   const getInicial = (nome) => {
@@ -140,9 +260,9 @@ export default function DashboardVendedor() {
   const getPapelUsuario = (tipo) => {
     switch(tipo) {
       case 'vendedor': return 'Vendedor';
-      case 'intermediario': return 'Intermediário';
+      case 'intermediario': return 'Intermediario';
       case 'cliente': return 'Cliente';
-      default: return 'Usuário';
+      default: return 'Usuario';
     }
   };
 
@@ -159,6 +279,12 @@ export default function DashboardVendedor() {
 
   return (
     <div className="dv-root">
+      {notification.show && (
+        <div className={`dv-toast-notification ${notification.type}`}>
+          {notification.message}
+        </div>
+      )}
+
       <nav className="dv-navbar">
         <span className="dv-logo">BLINK</span>
         <div className="dv-search-wrapper">
@@ -196,11 +322,41 @@ export default function DashboardVendedor() {
         </aside>
 
         <main className="dv-main">
+          {error && (
+            <div style={{ backgroundColor: '#fee', color: '#c00', padding: '10px', marginBottom: '20px', borderRadius: '5px' }}>
+              Erro: {error}
+            </div>
+          )}
+
           {activePage === "Dashboard" && (
             <>
               <div className="dv-header">
-                <h1 className="dv-welcome">Bem-vindo de volta, {usuarioLogado.nome.split(' ')[0]}</h1>
-                <p className="dv-welcome-sub">Aqui está o resumo do seu marketplace hoje.</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <div>
+                    <h1 className="dv-welcome">Bem-vindo de volta, {usuarioLogado.nome.split(' ')[0]}</h1>
+                    <p className="dv-welcome-sub">Aqui esta o resumo do seu marketplace hoje.</p>
+                  </div>
+                  <button 
+                    onClick={handleRefresh} 
+                    disabled={refreshing}
+                    style={{
+                      padding: '8px 16px',
+                      background: '#4F46E5',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: refreshing ? 'not-allowed' : 'pointer',
+                      opacity: refreshing ? 0.6 : 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      fontSize: '14px'
+                    }}
+                  >
+                    <span>🔄</span>
+                    {refreshing ? 'A recarregar...' : 'Recarregar Produtos'}
+                  </button>
+                </div>
               </div>
               
               <div className="dv-stats-grid">
@@ -226,7 +382,14 @@ export default function DashboardVendedor() {
                   return (
                     <div className="dv-produto-card" key={p.id}>
                       <div className="dv-produto-img-wrapper">
-                        <img src={p.foto_url || '/placeholder-image.jpg'} alt={p.nome} className="dv-produto-img" />
+                        <img 
+                          src={p.foto_url || '/placeholder-image.jpg'} 
+                          alt={p.nome} 
+                          className="dv-produto-img"
+                          onError={(e) => {
+                            e.target.src = 'https://placehold.co/300x200/2d3748/ffffff?text=Sem+Imagem';
+                          }}
+                        />
                         <span className={`dv-produto-badge ${estadoConfig.class}`}>{estadoConfig.label}</span>
                       </div>
                       <div className="dv-produto-info">
@@ -235,15 +398,74 @@ export default function DashboardVendedor() {
                           <p className="dv-produto-nome">{p.nome}</p>
                           <p className="dv-produto-preco">MZN {parseFloat(p.preco_minimo).toLocaleString()}</p>
                         </div>
-                        <p className="dv-produto-intermediarios">💸 Comissão: MZN {parseFloat(p.comissao_intermediario || 0).toLocaleString()}</p>
+                        <p className="dv-produto-intermediarios">Comissao: MZN {parseFloat(p.comissao_intermediario || 0).toLocaleString()}</p>
                         <div className="dv-produto-acoes">
-                          <button className="dv-acao-btn" title="Editar">✏️</button>
+                          <button 
+                            className="dv-acao-btn dv-acao-editar" 
+                            onClick={() => handleEditProduct(p)}
+                            style={{
+                              padding: '6px 12px',
+                              background: '#4F46E5',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              marginRight: '8px'
+                            }}
+                          >
+                            Editar
+                          </button>
                           {p.estado === 'publicado' ? (
-                            <button className="dv-acao-btn" title="Pausar" onClick={() => handleStatusChange(p.id, 'rascunho')}>⏸️</button>
+                            <button 
+                              className="dv-acao-btn dv-acao-pausar" 
+                              onClick={() => handleStatusChange(p.id, 'rascunho')}
+                              style={{
+                                padding: '6px 12px',
+                                background: '#F59E0B',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                                marginRight: '8px'
+                              }}
+                            >
+                              Guardar como Rascunho
+                            </button>
                           ) : p.estado === 'rascunho' ? (
-                            <button className="dv-acao-btn" title="Publicar" onClick={() => handleStatusChange(p.id, 'publicado')}>📢</button>
+                            <button 
+                              className="dv-acao-btn dv-acao-publicar" 
+                              onClick={() => handleStatusChange(p.id, 'publicado')}
+                              style={{
+                                padding: '6px 12px',
+                                background: '#10B981',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                                marginRight: '8px'
+                              }}
+                            >
+                              Publicar
+                            </button>
                           ) : null}
-                          <button className="dv-acao-btn" title="Eliminar" onClick={() => handleDeleteProduct(p.id)}>🗑️</button>
+                          <button 
+                            className="dv-acao-btn dv-acao-excluir" 
+                            onClick={() => handleDeleteProduct(p.id)}
+                            style={{
+                              padding: '6px 12px',
+                              background: '#EF4444',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '12px'
+                            }}
+                          >
+                            Excluir
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -253,7 +475,13 @@ export default function DashboardVendedor() {
 
               {produtos.length === 0 && (
                 <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
-                  <p>Você ainda não tem produtos cadastrados.</p>
+                  <p>Voce ainda nao tem produtos cadastrados.</p>
+                  <button 
+                    onClick={() => setActivePage("Adicionar produto")}
+                    style={{ marginTop: '10px', padding: '10px 20px', background: '#4F46E5', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+                  >
+                    Adicionar Produto
+                  </button>
                 </div>
               )}
             </>
@@ -265,6 +493,22 @@ export default function DashboardVendedor() {
             <div className="dv-produtos-list">
               <div className="dv-section-header">
                 <h2 className="dv-section-title">Todos os Meus Produtos</h2>
+                <button 
+                  onClick={handleRefresh} 
+                  disabled={refreshing}
+                  style={{
+                    padding: '6px 12px',
+                    background: '#4F46E5',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: refreshing ? 'not-allowed' : 'pointer',
+                    opacity: refreshing ? 0.6 : 1,
+                    fontSize: '12px'
+                  }}
+                >
+                  {refreshing ? 'A recarregar...' : 'Recarregar'}
+                </button>
               </div>
               <div className="dv-produtos-grid">
                 {produtos.map((p) => {
@@ -272,7 +516,14 @@ export default function DashboardVendedor() {
                   return (
                     <div className="dv-produto-card" key={p.id}>
                       <div className="dv-produto-img-wrapper">
-                        <img src={p.foto_url || '/placeholder-image.jpg'} alt={p.nome} className="dv-produto-img" />
+                        <img 
+                          src={p.foto_url || '/placeholder-image.jpg'} 
+                          alt={p.nome} 
+                          className="dv-produto-img"
+                          onError={(e) => {
+                            e.target.src = 'https://placehold.co/300x200/2d3748/ffffff?text=Sem+Imagem';
+                          }}
+                        />
                         <span className={`dv-produto-badge ${estadoConfig.class}`}>{estadoConfig.label}</span>
                       </div>
                       <div className="dv-produto-info">
@@ -281,41 +532,169 @@ export default function DashboardVendedor() {
                           <p className="dv-produto-nome">{p.nome}</p>
                           <p className="dv-produto-preco">MZN {parseFloat(p.preco_minimo).toLocaleString()}</p>
                         </div>
-                        <p className="dv-produto-intermediarios">💸 Comissão: MZN {parseFloat(p.comissao_intermediario || 0).toLocaleString()}</p>
+                        <p className="dv-produto-intermediarios">Comissao: MZN {parseFloat(p.comissao_intermediario || 0).toLocaleString()}</p>
                         <div className="dv-produto-acoes">
-                          <button className="dv-acao-btn" title="Editar">✏️</button>
+                          <button 
+                            className="dv-acao-btn dv-acao-editar" 
+                            onClick={() => handleEditProduct(p)}
+                            style={{
+                              padding: '6px 12px',
+                              background: '#4F46E5',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '12px',
+                              marginRight: '8px'
+                            }}
+                          >
+                            Editar
+                          </button>
                           {p.estado === 'publicado' ? (
-                            <button className="dv-acao-btn" title="Pausar" onClick={() => handleStatusChange(p.id, 'rascunho')}>⏸️</button>
+                            <button 
+                              className="dv-acao-btn dv-acao-pausar" 
+                              onClick={() => handleStatusChange(p.id, 'rascunho')}
+                              style={{
+                                padding: '6px 12px',
+                                background: '#F59E0B',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                                marginRight: '8px'
+                              }}
+                            >
+                              Guardar como Rascunho
+                            </button>
                           ) : p.estado === 'rascunho' ? (
-                            <button className="dv-acao-btn" title="Publicar" onClick={() => handleStatusChange(p.id, 'publicado')}>📢</button>
+                            <button 
+                              className="dv-acao-btn dv-acao-publicar" 
+                              onClick={() => handleStatusChange(p.id, 'publicado')}
+                              style={{
+                                padding: '6px 12px',
+                                background: '#10B981',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                                marginRight: '8px'
+                              }}
+                            >
+                              Publicar
+                            </button>
                           ) : null}
-                          <button className="dv-acao-btn" title="Eliminar" onClick={() => handleDeleteProduct(p.id)}>🗑️</button>
+                          <button 
+                            className="dv-acao-btn dv-acao-excluir" 
+                            onClick={() => handleDeleteProduct(p.id)}
+                            style={{
+                              padding: '6px 12px',
+                              background: '#EF4444',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              fontSize: '12px'
+                            }}
+                          >
+                            Excluir
+                          </button>
                         </div>
                       </div>
                     </div>
                   );
                 })}
               </div>
+              {produtos.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+                  <p>Nenhum produto encontrado.</p>
+                </div>
+              )}
             </div>
           )}
 
-          {activePage === "Intermediários" && (
+          {activePage === "Intermediarios" && (
             <div className="dv-em-breve">
               <span>👥</span>
-              <h2>Intermediários</h2>
-              <p>Em construção...</p>
+              <h2>Intermediarios</h2>
+              <p>Em construcao...</p>
             </div>
           )}
 
           {activePage === "Adicionar produto" && (
-            <CadastroProduto onProductAdded={() => {
-              fetchProdutos();
-              fetchStats();
-              setActivePage("Meus Produtos");
-            }} />
+            <CadastroProduto onProductAdded={handleProductAdded} />
           )}
         </main>
       </div>
+
+      {/* Modal de Edicao */}
+      {showEditModal && editingProduct && (
+        <div className="dv-modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="dv-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="dv-modal-header">
+              <h3>Editar Produto</h3>
+              <button className="dv-modal-close" onClick={() => setShowEditModal(false)}>×</button>
+            </div>
+            <div className="dv-modal-body">
+              <div className="dv-form-group">
+                <label className="dv-label">NOME DO PRODUTO</label>
+                <input 
+                  type="text" 
+                  className="dv-input"
+                  value={editingProduct.nome || ''}
+                  onChange={(e) => setEditingProduct({...editingProduct, nome: e.target.value})}
+                />
+              </div>
+              <div className="dv-form-group">
+                <label className="dv-label">DESCRICAO</label>
+                <textarea 
+                  className="dv-textarea"
+                  rows="4"
+                  value={editingProduct.descricao || ''}
+                  onChange={(e) => setEditingProduct({...editingProduct, descricao: e.target.value})}
+                />
+              </div>
+              <div className="dv-form-group">
+                <label className="dv-label">PRECO (MZN)</label>
+                <input 
+                  type="number" 
+                  className="dv-input"
+                  step="0.01"
+                  value={editingProduct.preco_minimo || ''}
+                  onChange={(e) => handlePrecoChange(e.target.value)}
+                />
+              </div>
+              <div className="dv-form-group">
+                <label className="dv-label">COMISSAO (%)</label>
+                <input 
+                  type="number" 
+                  className="dv-input"
+                  step="0.5"
+                  value={comissaoPercentual}
+                  onChange={(e) => handleComissaoPercentualChange(e.target.value)}
+                />
+                <small className="dv-hint">A comissao sera calculada automaticamente sobre o preco</small>
+              </div>
+              <div className="dv-form-group">
+                <label className="dv-label">VALOR DA COMISSAO (MZN)</label>
+                <input 
+                  type="text" 
+                  className="dv-input"
+                  value={editingProduct.comissao_intermediario?.toFixed(2) || '0.00'}
+                  disabled
+                  style={{ backgroundColor: '#f5f5f5' }}
+                />
+                <small className="dv-hint">Valor calculado automaticamente</small>
+              </div>
+            </div>
+            <div className="dv-modal-footer">
+              <button className="dv-btn dv-btn-outline" onClick={() => setShowEditModal(false)}>Cancelar</button>
+              <button className="dv-btn dv-btn-primary" onClick={handleUpdateProduct}>Salvar Alteracoes</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

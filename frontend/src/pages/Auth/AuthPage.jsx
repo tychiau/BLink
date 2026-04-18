@@ -21,7 +21,7 @@ const PERFIS = [
   {
     id: "vendedor",
     label: "Vendedor",
-    desc: "Venda em MZM e escale seu negócio.",
+    desc: "Venda em MZM e escale seu negocio.",
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <rect x="2" y="3" width="20" height="14" rx="2" />
@@ -31,8 +31,8 @@ const PERFIS = [
   },
   {
     id: "intermediario",
-    label: "Intermediário",
-    desc: "Ganhe comissões em MZM por conexão.",
+    label: "Intermediario",
+    desc: "Ganhe comissoes em MZM por conexao.",
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
         <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
@@ -43,8 +43,8 @@ const PERFIS = [
 
 const FEATURES = [
   {
-    label: "Segurança em Moçambique",
-    desc: "Transações em Meticais protegidas por criptografia de ponta para o mercado nacional.",
+    label: "Seguranca em Mocambique",
+    desc: "Transacoes em Meticais protegidas por criptografia de ponta para o mercado nacional.",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1e3a5f" strokeWidth="2">
         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
@@ -53,7 +53,7 @@ const FEATURES = [
   },
   {
     label: "Insights de Mercado Local",
-    desc: "Dashboards detalhados com métricas reais para o contexto económico de 2026.",
+    desc: "Dashboards detalhados com metricas reais para o contexto economico de 2026.",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1e3a5f" strokeWidth="2">
         <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -63,7 +63,7 @@ const FEATURES = [
   },
   {
     label: "Ecossistema Conectado",
-    desc: "Intermediários locais prontos para agilizar negociações em todo o território nacional.",
+    desc: "Intermediarios locais prontos para agilizar negociacoes em todo o territorio nacional.",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1e3a5f" strokeWidth="2">
         <circle cx="12" cy="12" r="3" />
@@ -84,8 +84,9 @@ export default function AuthPage() {
   const [nome, setNome] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  // Função para redirecionar baseado no papel do usuário
+  // Funcao para redirecionar baseado no papel do usuario
   const redirectByRole = (userRole) => {
     if (userRole === "cliente") {
       navigate("/cliente/dashboard");
@@ -103,8 +104,11 @@ export default function AuthPage() {
       e.preventDefault();
     }
 
+    // Limpar mensagem de erro anterior
+    setErrorMessage("");
+
     if (!email || !senha) {
-      alert("Por favor, preencha o email e a senha.");
+      setErrorMessage("Por favor, preencha o email e a senha.");
       return;
     }
 
@@ -113,16 +117,26 @@ export default function AuthPage() {
     try {
       const data = await loginAPI(email, senha);
 
+      console.log("Resposta do login:", data);
+
+      // Verificar se houve erro na resposta
       if (data.error) {
-        alert(data.error || "Erro ao fazer login");
+        setErrorMessage(data.message || data.error || "Erro ao fazer login");
         setIsLoading(false);
         return;
       }
 
-      // Verificar se os dados do usuário estão completos
+      // Verificar se os dados do usuario estao completos
       if (!data.user || !data.user.id) {
-        console.error("Dados do usuário incompletos:", data.user);
-        alert("Erro: Dados do usuário incompletos. Tente novamente.");
+        console.error("Dados do usuario incompletos:", data.user);
+        setErrorMessage("Dados do usuario incompletos. Tente novamente.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Verificar se o token existe
+      if (!data.token) {
+        setErrorMessage("Token de autenticacao nao recebido.");
         setIsLoading(false);
         return;
       }
@@ -136,32 +150,35 @@ export default function AuthPage() {
         tipo_usuario: data.user.tipo_usuario
       }));
 
-      console.log("Login bem sucedido! Usuário:", data.user);
+      console.log("Login bem sucedido! Usuario:", data.user);
 
       // Redirecionamento
       redirectByRole(data.user.tipo_usuario);
 
     } catch (error) {
-      console.error("Erro na conexão:", error);
-      alert("Erro ao conectar ao servidor. Verifique se o Backend está ligado.");
+      console.error("Erro na conexao:", error);
+      setErrorMessage("Erro ao conectar ao servidor. Verifique se o Backend esta ligado.");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleRegister = async () => {
+    // Limpar mensagem de erro anterior
+    setErrorMessage("");
+
     if (!nome || !email || !senha || !perfil) {
-      alert("Preencha todos os campos");
+      setErrorMessage("Preencha todos os campos");
       return;
     }
 
     if (senha !== confirmarSenha) {
-      alert("As senhas não coincidem");
+      setErrorMessage("As senhas nao coincidem");
       return;
     }
 
     if (senha.length < 6) {
-      alert("A senha deve ter pelo menos 6 caracteres");
+      setErrorMessage("A senha deve ter pelo menos 6 caracteres");
       return;
     }
 
@@ -175,16 +192,25 @@ export default function AuthPage() {
         tipo_usuario: perfil
       });
 
+      console.log("Resposta do registo:", data);
+
       if (!data || data.error) {
-        alert(data?.error || "Erro no registo");
+        setErrorMessage(data?.message || data?.error || "Erro no registo");
         setIsLoading(false);
         return;
       }
 
-      // Verificar se os dados do usuário estão completos
+      // Verificar se os dados do usuario estao completos
       if (!data.user || !data.user.id) {
-        console.error("Dados do usuário incompletos:", data.user);
-        alert("Erro: Dados do usuário incompletos. Tente novamente.");
+        console.error("Dados do usuario incompletos:", data.user);
+        setErrorMessage("Dados do usuario incompletos. Tente novamente.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Verificar se o token existe
+      if (!data.token) {
+        setErrorMessage("Token de autenticacao nao recebido.");
         setIsLoading(false);
         return;
       }
@@ -198,14 +224,14 @@ export default function AuthPage() {
         tipo_usuario: data.user.tipo_usuario
       }));
 
-      console.log("Registo bem sucedido! Usuário:", data.user);
+      console.log("Registo bem sucedido! Usuario:", data.user);
 
       // Redirecionamento
       redirectByRole(data.user.tipo_usuario);
 
     } catch (err) {
       console.error("Erro no registo:", err);
-      alert("Erro de conexão com o servidor");
+      setErrorMessage("Erro de conexao com o servidor");
     } finally {
       setIsLoading(false);
     }
@@ -229,14 +255,24 @@ export default function AuthPage() {
         {/* PAINEL ESQUERDO */}
         <div className="p-12 border-r border-gray-100">
           <p className="text-xl font-bold text-[#1e3a5f] tracking-tight mb-1">BLINK</p>
-          <p className="text-sm text-gray-500 mb-8">A nova era das conexões comerciais em Moçambique.</p>
+          <p className="text-sm text-gray-500 mb-8">A nova era das conexoes comerciais em Mocambique.</p>
+
+          {/* Mensagem de erro */}
+          {errorMessage && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-600">{errorMessage}</p>
+            </div>
+          )}
 
           {/* Tabs */}
           <div className="flex gap-6 border-b border-gray-200 mb-7">
             {["entrar", "registrar"].map((t) => (
               <button
                 key={t}
-                onClick={() => setTab(t)}
+                onClick={() => {
+                  setTab(t);
+                  setErrorMessage("");
+                }}
                 className={cn(
                   "pb-2 text-sm font-medium capitalize transition-colors",
                   tab === t
@@ -330,7 +366,7 @@ export default function AuthPage() {
                 <button type="button" className="text-xs text-[#1e3a5f] hover:underline">Esqueceu a senha?</button>
               </div>
 
-              {/* Botão entrar */}
+              {/* Botao entrar */}
               <button
                 type="button"
                 onClick={handleLogin}
@@ -340,7 +376,7 @@ export default function AuthPage() {
                 {isLoading ? "A entrar..." : "Entrar na Conta"}
               </button>
 
-              {/* Botão visitante */}
+              {/* Botao visitante */}
               {perfil === "cliente" && (
                 <button
                   onClick={handleVisitante}
@@ -373,7 +409,7 @@ export default function AuthPage() {
               </div>
             </div>
           ) : (
-            /* REGISTRAR */
+            /* REGISTAR */
             <div className="space-y-4">
               <div>
                 <p className="text-[10px] font-semibold tracking-widest text-gray-400 mb-2">SELECIONE SEU PERFIL</p>
@@ -420,7 +456,7 @@ export default function AuthPage() {
                 <label className="block text-[10px] font-semibold tracking-widest text-gray-400 mb-1.5">SENHA</label>
                 <input 
                   type="password" 
-                  placeholder="Mínimo 6 caracteres" 
+                  placeholder="Minimo 6 caracteres" 
                   value={senha}
                   onChange={(e) => setSenha(e.target.value)}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-[#1e3a5f] placeholder-gray-300" 
@@ -452,7 +488,7 @@ export default function AuthPage() {
         <div className="bg-gray-50 p-12 flex flex-col justify-between">
           <div>
             <h2 className="text-4xl font-extrabold text-gray-900 leading-tight mb-10">
-              Expanda seus <span className="text-[#1e3a5f]">horizontes</span> em Maputo e além.
+              Expanda seus <span className="text-[#1e3a5f]">horizontes</span> em Maputo e alem.
             </h2>
             <div className="space-y-6">
               {FEATURES.map((f) => (
@@ -475,12 +511,12 @@ export default function AuthPage() {
                 RM
               </div>
               <div>
-                <p className="text-[10px] font-semibold tracking-wider text-gray-500">RICARDO MENDONÇA • TOP VENDEDOR</p>
+                <p className="text-[10px] font-semibold tracking-wider text-gray-500">RICARDO MENDONCA • TOP VENDEDOR</p>
                 <p className="text-[10px] text-gray-400">MAPUTO</p>
               </div>
             </div>
             <p className="text-xs text-gray-500 leading-relaxed italic">
-              "Em 2026, esta plataforma é o motor do meu negócio. O suporte em Moçambique é impecável e as vendas em MZM crescem mensalmente."
+              "Em 2026, esta plataforma e o motor do meu negocio. O suporte em Mocambique e impecavel e as vendas em MZM crescem mensalmente."
             </p>
           </div>
         </div>
