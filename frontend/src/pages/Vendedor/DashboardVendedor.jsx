@@ -166,9 +166,12 @@ export default function DashboardVendedor() {
   };
 
   const handleEditProduct = (produto) => {
-    const percentual = produto.preco_minimo > 0 
-      ? (produto.comissao_intermediario / produto.preco_minimo) * 100 
-      : 5;
+    let percentual = 5;
+    if (produto.preco_minimo > 0 && produto.comissao_intermediario > 0) {
+      percentual = (produto.comissao_intermediario / produto.preco_minimo) * 100;
+      if (percentual > 100) percentual = 100;
+      if (percentual < 1) percentual = 1;
+    }
     
     setComissaoPercentual(Math.round(percentual * 10) / 10);
     setEditingProduct({ ...produto });
@@ -187,7 +190,10 @@ export default function DashboardVendedor() {
   };
 
   const handleComissaoPercentualChange = (percentual) => {
-    const novoPercentual = parseFloat(percentual) || 0;
+    let novoPercentual = parseFloat(percentual) || 0;
+    if (novoPercentual > 100) novoPercentual = 100;
+    if (novoPercentual < 1) novoPercentual = 1;
+    
     setComissaoPercentual(novoPercentual);
     
     const preco = editingProduct?.preco_minimo || 0;
@@ -226,8 +232,6 @@ export default function DashboardVendedor() {
         comissao_intermediario: parseFloat(editingProduct.comissao_intermediario || 0),
         categoria_id: editingProduct.categoria_id || null
       };
-      
-      console.log('Enviando atualizacao:', productData);
       
       const data = await productsAPI.updateProduct(token, editingProduct.id, productData);
       
@@ -341,7 +345,7 @@ export default function DashboardVendedor() {
                     disabled={refreshing}
                     style={{
                       padding: '8px 16px',
-                      background: '#4F46E5',
+                      background: '#2d4a6e',
                       color: 'white',
                       border: 'none',
                       borderRadius: '8px',
@@ -405,7 +409,7 @@ export default function DashboardVendedor() {
                             onClick={() => handleEditProduct(p)}
                             style={{
                               padding: '6px 12px',
-                              background: '#4F46E5',
+                              background: '#2d4a6e',
                               color: 'white',
                               border: 'none',
                               borderRadius: '4px',
@@ -478,7 +482,7 @@ export default function DashboardVendedor() {
                   <p>Voce ainda nao tem produtos cadastrados.</p>
                   <button 
                     onClick={() => setActivePage("Adicionar produto")}
-                    style={{ marginTop: '10px', padding: '10px 20px', background: '#4F46E5', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+                    style={{ marginTop: '10px', padding: '10px 20px', background: '#2d4a6e', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
                   >
                     Adicionar Produto
                   </button>
@@ -498,7 +502,7 @@ export default function DashboardVendedor() {
                   disabled={refreshing}
                   style={{
                     padding: '6px 12px',
-                    background: '#4F46E5',
+                    background: '#2d4a6e',
                     color: 'white',
                     border: 'none',
                     borderRadius: '6px',
@@ -539,7 +543,7 @@ export default function DashboardVendedor() {
                             onClick={() => handleEditProduct(p)}
                             style={{
                               padding: '6px 12px',
-                              background: '#4F46E5',
+                              background: '#2d4a6e',
                               color: 'white',
                               border: 'none',
                               borderRadius: '4px',
@@ -628,10 +632,10 @@ export default function DashboardVendedor() {
         </main>
       </div>
 
-      {/* Modal de Edicao */}
+      {/* Modal de Edicao - CORRIGIDO */}
       {showEditModal && editingProduct && (
         <div className="dv-modal-overlay" onClick={() => setShowEditModal(false)}>
-          <div className="dv-modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="dv-modal-container" onClick={(e) => e.stopPropagation()}>
             <div className="dv-modal-header">
               <h3>Editar Produto</h3>
               <button className="dv-modal-close" onClick={() => setShowEditModal(false)}>×</button>
@@ -650,7 +654,7 @@ export default function DashboardVendedor() {
                 <label className="dv-label">DESCRICAO</label>
                 <textarea 
                   className="dv-textarea"
-                  rows="4"
+                  rows="3"
                   value={editingProduct.descricao || ''}
                   onChange={(e) => setEditingProduct({...editingProduct, descricao: e.target.value})}
                 />
@@ -671,10 +675,12 @@ export default function DashboardVendedor() {
                   type="number" 
                   className="dv-input"
                   step="0.5"
+                  min="1"
+                  max="100"
                   value={comissaoPercentual}
                   onChange={(e) => handleComissaoPercentualChange(e.target.value)}
                 />
-                <small className="dv-hint">A comissao sera calculada automaticamente sobre o preco</small>
+                <small className="dv-hint">Comissao permitida entre 1% e 100%</small>
               </div>
               <div className="dv-form-group">
                 <label className="dv-label">VALOR DA COMISSAO (MZN)</label>
@@ -689,8 +695,12 @@ export default function DashboardVendedor() {
               </div>
             </div>
             <div className="dv-modal-footer">
-              <button className="dv-btn dv-btn-outline" onClick={() => setShowEditModal(false)}>Cancelar</button>
-              <button className="dv-btn dv-btn-primary" onClick={handleUpdateProduct}>Salvar Alteracoes</button>
+              <button className="dv-btn-cancel" onClick={() => setShowEditModal(false)}>
+                Cancelar
+              </button>
+              <button className="dv-btn-save" onClick={handleUpdateProduct}>
+                Salvar Alteracoes
+              </button>
             </div>
           </div>
         </div>
