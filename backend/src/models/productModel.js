@@ -1,46 +1,69 @@
 const db = require('../config/db');
 
 const Product = {
-    // Buscar produtos de um vendedor específico
     getByVendedorId: async (vendedorId) => {
         try {
             const sql = `
                 SELECT 
-                    id, 
-                    nome, 
-                    categoria_id,
-                    descricao, 
-                    preco_minimo, 
-                    comissao_intermediario,
-                    estado, 
-                    foto_produto,
-                    DATE_FORMAT(data_cadastro, '%d/%m/%Y %H:%i') as data_cadastro
-                FROM produtos 
-                WHERE vendedor_id = ? AND estado != 'removido'
-                ORDER BY data_cadastro DESC
+                    p.id, 
+                    p.vendedor_id,
+                    p.nome, 
+                    p.categoria_id,
+                    p.descricao, 
+                    p.preco_minimo, 
+                    p.comissao_intermediario,
+                    p.estado, 
+                    p.foto_produto,
+                    DATE_FORMAT(p.data_cadastro, '%d/%m/%Y %H:%i') as data_cadastro
+                FROM produtos p
+                WHERE p.vendedor_id = ? AND p.estado != 'removido'
+                ORDER BY p.data_cadastro DESC
             `;
             const [rows] = await db.execute(sql, [vendedorId]);
             
-            // Converter foto_produto para base64 se existir
-            const produtos = rows.map(produto => ({
-                ...produto,
-                foto_url: produto.foto_produto ? 
-                    `data:image/jpeg;base64,${produto.foto_produto.toString('base64')}` : 
-                    'https://placehold.co/300x200/2d3748/ffffff?text=Sem+Imagem'
-            }));
+            const produtos = rows.map(produto => {
+                let foto_url = 'https://placehold.co/300x200/2d3748/ffffff?text=Sem+Imagem';
+                
+                if (produto.foto_produto && produto.foto_produto.length > 0) {
+                    try {
+                        if (Buffer.isBuffer(produto.foto_produto)) {
+                            foto_url = `data:image/jpeg;base64,${produto.foto_produto.toString('base64')}`;
+                        }
+                    } catch (err) {
+                        console.error("Erro ao converter imagem:", err);
+                    }
+                }
+                
+                return {
+                    id: produto.id,
+                    vendedor_id: produto.vendedor_id,
+                    nome: produto.nome,
+                    categoria_id: produto.categoria_id,
+                    descricao: produto.descricao || '',
+                    preco_minimo: parseFloat(produto.preco_minimo),
+                    comissao_intermediario: parseFloat(produto.comissao_intermediario || 0),
+                    estado: produto.estado,
+                    data_cadastro: produto.data_cadastro,
+                    foto_url: foto_url
+                };
+            });
             
             return produtos;
         } catch (error) {
-            console.error("Erro ao buscar produtos do vendedor:", error.message);
+            console.error("Erro ao buscar produtos:", error.message);
             throw error;
         }
     },
 
-    // Buscar produto por ID
     getById: async (id) => {
         try {
             const sql = 'SELECT * FROM produtos WHERE id = ?';
             const [rows] = await db.execute(sql, [id]);
+            
+            if (rows[0] && rows[0].foto_produto && Buffer.isBuffer(rows[0].foto_produto)) {
+                rows[0].foto_url = `data:image/jpeg;base64,${rows[0].foto_produto.toString('base64')}`;
+            }
+            
             return rows[0];
         } catch (error) {
             console.error("Erro ao buscar produto por ID:", error.message);
@@ -48,7 +71,6 @@ const Product = {
         }
     },
 
-    // Criar novo produto
     create: async (produtoData) => {
         const { 
             vendedor_id, 
@@ -62,6 +84,16 @@ const Product = {
         } = produtoData;
         
         try {
+            let fotoBuffer = null;
+            if (foto_produto && foto_produto.startsWith('data:image')) {
+                const base64Data = foto_produto.split(',')[1];
+                if (base64Data) {
+                    fotoBuffer = Buffer.from(base64Data, 'base64');
+                }
+            } else if (foto_produto && Buffer.isBuffer(foto_produto)) {
+                fotoBuffer = foto_produto;
+            }
+            
             const sql = `
                 INSERT INTO produtos 
                 (vendedor_id, categoria_id, nome, descricao, preco_minimo, 
@@ -69,14 +101,14 @@ const Product = {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
             `;
             const [result] = await db.execute(sql, [
-                vendedor_id, 
-                categoria_id, 
-                nome, 
-                descricao, 
-                preco_minimo, 
-                comissao_intermediario, 
+                vendedor_id,
+                categoria_id || null,
+                nome,
+                descricao || '',
+                preco_minimo,
+                comissao_intermediario || 0,
                 estado || 'rascunho',
-                foto_produto || null
+                fotoBuffer
             ]);
             return result.insertId;
         } catch (error) {
@@ -85,7 +117,7 @@ const Product = {
         }
     },
 
-    // Atualizar produto
+    // UPDATE CORRIGIDO
     update: async (id, produtoData) => {
         const { 
             categoria_id, 
@@ -93,25 +125,47 @@ const Product = {
             descricao, 
             preco_minimo, 
             comissao_intermediario, 
-            estado,
-            foto_produto 
+            estado
         } = produtoData;
         
         try {
-            let sql = `
-                UPDATE produtos 
-                SET categoria_id = ?, nome = ?, descricao = ?, 
-                    preco_minimo = ?, comissao_intermediario = ?, estado = ?
-            `;
-            const params = [categoria_id, nome, descricao, preco_minimo, comissao_intermediario, estado];
+            const updates = [];
+            const params = [];
             
-            if (foto_produto) {
-                sql += `, foto_produto = ?`;
-                params.push(foto_produto);
+            if (nome !== undefined) {
+                updates.push("nome = ?");
+                params.push(nome);
+            }
+            if (descricao !== undefined) {
+                updates.push("descricao = ?");
+                params.push(descricao);
+            }
+            if (preco_minimo !== undefined) {
+                updates.push("preco_minimo = ?");
+                params.push(preco_minimo);
+            }
+            if (categoria_id !== undefined) {
+                updates.push("categoria_id = ?");
+                params.push(categoria_id);
+            }
+            if (comissao_intermediario !== undefined) {
+                updates.push("comissao_intermediario = ?");
+                params.push(comissao_intermediario);
+            }
+            if (estado !== undefined) {
+                updates.push("estado = ?");
+                params.push(estado);
             }
             
-            sql += ` WHERE id = ?`;
+            if (updates.length === 0) {
+                return false;
+            }
+            
+            const sql = `UPDATE produtos SET ${updates.join(", ")} WHERE id = ?`;
             params.push(id);
+            
+            console.log("SQL:", sql);
+            console.log("Params:", params);
             
             const [result] = await db.execute(sql, params);
             return result.affectedRows > 0;
@@ -121,19 +175,17 @@ const Product = {
         }
     },
 
-    // Atualizar estado do produto
     updateStatus: async (id, estado) => {
         try {
             const sql = 'UPDATE produtos SET estado = ? WHERE id = ?';
             const [result] = await db.execute(sql, [estado, id]);
             return result.affectedRows > 0;
         } catch (error) {
-            console.error("Erro ao atualizar estado do produto:", error.message);
+            console.error("Erro ao atualizar estado:", error.message);
             throw error;
         }
     },
 
-    // Deletar produto (soft delete - muda estado para 'removido')
     delete: async (id) => {
         try {
             const sql = 'UPDATE produtos SET estado = ? WHERE id = ?';
@@ -145,19 +197,17 @@ const Product = {
         }
     },
 
-    // Verificar se produto pertence ao vendedor
     belongsToVendedor: async (produtoId, vendedorId) => {
         try {
             const sql = 'SELECT id FROM produtos WHERE id = ? AND vendedor_id = ?';
             const [rows] = await db.execute(sql, [produtoId, vendedorId]);
             return rows.length > 0;
         } catch (error) {
-            console.error("Erro ao verificar propriedade do produto:", error.message);
+            console.error("Erro ao verificar propriedade:", error.message);
             throw error;
         }
     },
 
-    // Buscar estatísticas do vendedor
     getStatsByVendedorId: async (vendedorId) => {
         try {
             const sql = `
@@ -171,9 +221,16 @@ const Product = {
                 WHERE vendedor_id = ? AND estado != 'removido'
             `;
             const [rows] = await db.execute(sql, [vendedorId]);
-            return rows[0];
+            
+            return {
+                total_produtos: parseInt(rows[0].total_produtos) || 0,
+                produtos_publicados: parseInt(rows[0].produtos_publicados) || 0,
+                aguardando_intermediario: parseInt(rows[0].aguardando_intermediario) || 0,
+                rascunhos: parseInt(rows[0].rascunhos) || 0,
+                vendidos: parseInt(rows[0].vendidos) || 0
+            };
         } catch (error) {
-            console.error("Erro ao buscar estatísticas:", error.message);
+            console.error("Erro ao buscar estatisticas:", error.message);
             throw error;
         }
     }

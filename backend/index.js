@@ -12,54 +12,55 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // --- MIDDLEWARES ---
+// CONFIGURACAO CORS CORRIGIDA
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*', // Alterei para '*' caso o .env não tenha a URL, para evitar bloqueio no teste
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+    origin: ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:3001'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
 }));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // --- ROTAS ---
-
-// Rotas da API
 app.use('/auth', authRoutes);
 app.use('/protected', protectedRoutes);
 app.use('/api', productRoutes);
 
-// Rota base atualizada para mostrar o novo endpoint
+// Rota base
 app.get('/', (req, res) => {
-  res.json({
-    sistema: "Blink - Intermediação de Compra e Venda",
-    status: "Online",
-    endpoints: {
-      auth: "/auth",
-      protected: "/protected",
-      produtos: "/api/produtos" // <--- Adicionei aqui para você ver no navegador
-    },
-    timestamp: new Date().toISOString()
-  });
+    res.json({
+        sistema: "Blink - Intermediacao de Compra e Venda",
+        status: "Online",
+        endpoints: {
+            auth: "/auth",
+            protected: "/protected",
+            produtos: "/api/produtos"
+        },
+        timestamp: new Date().toISOString()
+    });
 });
 
 // Middleware de erro 404
 app.use((req, res) => {
-  res.status(404).json({
-    error: 'Rota não encontrada'
-  });
+    res.status(404).json({
+        error: 'Rota nao encontrada'
+    });
 });
 
 // Middleware de erro global
 app.use((err, req, res, next) => {
-  console.error('Erro:', err);
-  res.status(500).json({
-    error: 'Erro interno do servidor',
-    message: process.env.NODE_ENV === 'development' ? err.message : undefined
-  });
+    console.error('Erro:', err);
+    res.status(500).json({
+        error: 'Erro interno do servidor',
+        message: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
 });
 
-// --- INICIALIZAÇÃO DO SERVIDOR ---
+// --- INICIALIZACAO DO SERVIDOR ---
 app.listen(PORT, () => {
-  console.log(`Servidor rodando em http://localhost:${PORT}`);
+    console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
 
 module.exports = pool;
