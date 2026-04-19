@@ -333,4 +333,5 @@ export default function DashboardIntermediario() {
       </footer>
     </>
   );
+  
 }
