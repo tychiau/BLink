@@ -2,7 +2,9 @@ import { Routes, Route } from 'react-router-dom';
 import AuthPage from '../pages/Auth/AuthPage';
 import DashboardVendedor from '../pages/Vendedor/DashboardVendedor';
 import ClienteDashboardPage from '../pages/Cliente/ClienteDashboardPage';
+import DashboardIntermediario from '../pages/Intermediario/DashboardIntermediario';
 import SolicitacoesVendedor from '../pages/Vendedor/SolicitacoesVendedor';
+import SolicitacoesIntermediario from '../pages/Intermediario/SolicitacoesIntermediario';
 
 function App() {
   return (
@@ -12,8 +14,11 @@ function App() {
       <Route path="/cadastro-produto" element={<DashboardVendedor />} />
       <Route path="/vendedor/dashboard" element={<DashboardVendedor />} />
       <Route path="/cliente/dashboard" element={<ClienteDashboardPage />} />
-      <Route path="*" element={<div>Rota não encontrada</div>} />
+      <Route path="/intermediario/dashboard" element={<DashboardIntermediario />} />
       <Route path="/vendedor/solicitacoes" element={<SolicitacoesVendedor />} />
+      <Route path="/intermediario/solicitacoes" element={<SolicitacoesIntermediario />} />
+      <Route path="*" element={<div>Rota não encontrada</div>} />
+      
     </Routes>
   );
 }
