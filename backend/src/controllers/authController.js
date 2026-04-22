@@ -34,6 +34,13 @@ exports.googleLogin = async (req, res) => {
         tipo_usuario: tipo_usuario // Usa o perfil selecionado no frontend
       });
       user = await User.getById(userId);
+    } else {
+      if (user.tipo_usuario !== tipo_usuario) {
+        return res.status(403).json({
+          error: "Conflito de Perfil",
+          message: `Esta conta está registada como ${user.tipo_usuario}. Por favor, seleccione o perfil correcto para entrar.`
+        });
+      }
     }
 
     // 4. Gerar o token JWT do seu sistema
