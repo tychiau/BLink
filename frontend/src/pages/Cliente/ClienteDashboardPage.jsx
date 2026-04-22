@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { handleLogout } from "../../api";
 
 const PRODUTOS = [
   {
@@ -68,12 +69,6 @@ export default function ClienteDashboardPage() {
   const user = JSON.parse(localStorage.getItem("blink_user") || "{}");
   const isVisitante = user?.visitante === true;
 
-  function handleSair() {
-    localStorage.removeItem("blink_user");
-    localStorage.removeItem("accessToken");
-    navigate("/auth");
-  }
-
   return (
     <div className="min-h-dvh bg-slate-50">
       <header className="border-b border-slate-200 bg-white">
@@ -114,7 +109,7 @@ export default function ClienteDashboardPage() {
           <div className="mt-6 border-t border-slate-100 pt-4">
             <button
               type="button"
-              onClick={handleSair}
+              onClick={handleLogout}
               className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
             >
               Sair

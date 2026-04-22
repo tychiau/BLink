@@ -1,8 +1,12 @@
 // frontend/src/api.js
 
-const API_BASE_URL = process.env.NODE_ENV === 'development' 
-    ? 'http://localhost:3000'
-    : 'https://blink-oz62.onrender.com';
+const API_BASE_URL = 'https://blink-oz62.onrender.com';
+
+export const handleLogout = () => {
+    localStorage.removeItem('blink_user');
+    localStorage.removeItem('accessToken');
+    window.location.href = '/auth';
+}
 
 export const loginAPI = async (email, password) => {
     try {
@@ -11,12 +15,12 @@ export const loginAPI = async (email, password) => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
         });
-        
+
         if (!response.ok) {
             const error = await response.json();
             return { error: true, message: error.message || 'Erro no login' };
         }
-        
+
         return await response.json();
     } catch (error) {
         console.error('Erro no login:', error);
@@ -31,12 +35,12 @@ export const registerAPI = async (userData) => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(userData)
         });
-        
+
         if (!response.ok) {
             const error = await response.json();
             return { error: true, message: error.message || 'Erro no registo' };
         }
-        
+
         return await response.json();
     } catch (error) {
         console.error('Erro no registo:', error);
@@ -54,12 +58,12 @@ export const productsAPI = {
                     'Content-Type': 'application/json'
                 }
             });
-            
+
             if (!response.ok) {
                 const error = await response.json();
                 return { error: true, message: error.message || 'Erro ao buscar produtos' };
             }
-            
+
             return await response.json();
         } catch (error) {
             console.error('Erro ao buscar produtos:', error);
@@ -76,12 +80,12 @@ export const productsAPI = {
                     'Content-Type': 'application/json'
                 }
             });
-            
+
             if (!response.ok) {
                 const error = await response.json();
                 return { error: true, message: error.message || 'Erro ao buscar estatisticas' };
             }
-            
+
             return await response.json();
         } catch (error) {
             console.error('Erro ao buscar estatisticas:', error);
@@ -99,12 +103,12 @@ export const productsAPI = {
                 },
                 body: JSON.stringify(productData)
             });
-            
+
             if (!response.ok) {
                 const error = await response.json();
                 return { error: true, message: error.message || 'Erro ao criar produto' };
             }
-            
+
             return await response.json();
         } catch (error) {
             console.error('Erro ao criar produto:', error);
@@ -115,7 +119,7 @@ export const productsAPI = {
     updateProduct: async (token, productId, productData) => {
         try {
             console.log('Atualizando produto:', productId, productData);
-            
+
             const response = await fetch(`${API_BASE_URL}/api/produto/${productId}`, {
                 method: 'PUT',
                 headers: {
@@ -124,12 +128,12 @@ export const productsAPI = {
                 },
                 body: JSON.stringify(productData)
             });
-            
+
             if (!response.ok) {
                 const error = await response.json();
                 return { error: true, message: error.message || 'Erro ao atualizar produto' };
             }
-            
+
             return await response.json();
         } catch (error) {
             console.error('Erro ao atualizar produto:', error);
@@ -147,12 +151,12 @@ export const productsAPI = {
                 },
                 body: JSON.stringify({ estado })
             });
-            
+
             if (!response.ok) {
                 const error = await response.json();
                 return { error: true, message: error.message || 'Erro ao atualizar status' };
             }
-            
+
             return await response.json();
         } catch (error) {
             console.error('Erro ao atualizar status:', error);
@@ -169,12 +173,12 @@ export const productsAPI = {
                     'Content-Type': 'application/json'
                 }
             });
-            
+
             if (!response.ok) {
                 const error = await response.json();
                 return { error: true, message: error.message || 'Erro ao deletar produto' };
             }
-            
+
             return await response.json();
         } catch (error) {
             console.error('Erro ao deletar produto:', error);
@@ -191,12 +195,12 @@ export const productsAPI = {
                     'Content-Type': 'application/json'
                 }
             });
-            
+
             if (!response.ok) {
                 const error = await response.json();
                 return { error: true, message: error.message || 'Erro ao buscar produto' };
             }
-            
+
             return await response.json();
         } catch (error) {
             console.error('Erro ao buscar produto:', error);
@@ -205,4 +209,4 @@ export const productsAPI = {
     }
 };
 
-export default { loginAPI, registerAPI, productsAPI };
+export default { handleLogout, loginAPI, registerAPI, productsAPI };

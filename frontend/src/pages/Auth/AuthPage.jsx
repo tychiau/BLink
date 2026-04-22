@@ -150,7 +150,13 @@ export default function AuthPage() {
         tipo_usuario: data.user.tipo_usuario
       }));
 
-      console.log("Login bem sucedido! Usuario:", data.user);
+      console.log("Login bem sucedido! Usuario:", data.user.tipo_usuario);
+
+      if (perfil !== data.user.tipo_usuario) {
+        setErrorMessage(`Esta conta não está registada como ${perfil}. O seu perfil é: ${data.user.tipo_usuario}.`);
+        setIsLoading(false);
+        return;
+      }
 
       // Redirecionamento
       redirectByRole(data.user.tipo_usuario);
@@ -224,7 +230,7 @@ export default function AuthPage() {
         tipo_usuario: data.user.tipo_usuario
       }));
 
-      console.log("Registo bem sucedido! Usuario:", data.user);
+      console.log("Registo bem sucedido! Usuario:", data.user.tipo_usuario);
 
       // Redirecionamento
       redirectByRole(data.user.tipo_usuario);
@@ -238,12 +244,12 @@ export default function AuthPage() {
   };
 
   const handleVisitante = () => {
-    localStorage.setItem("blink_user", JSON.stringify({ 
+    localStorage.setItem("blink_user", JSON.stringify({
       id: "visitante",
       nome: "Visitante",
       email: "visitante@blink.mz",
-      tipo_usuario: "cliente", 
-      visitante: true 
+      tipo_usuario: "cliente",
+      visitante: true
     }));
     navigate("/cliente/dashboard");
   };
@@ -272,6 +278,9 @@ export default function AuthPage() {
                 onClick={() => {
                   setTab(t);
                   setErrorMessage("");
+                  setPerfil("vendedor"); // Reinicia para evitar herdar selecções da outra aba
+                  setNome("");           // Opcional: limpa o nome ao trocar
+                  setConfirmarSenha(""); // Opcional: limpa a confirmação ao trocar
                 }}
                 className={cn(
                   "pb-2 text-sm font-medium capitalize transition-colors",
@@ -434,47 +443,47 @@ export default function AuthPage() {
               </div>
               <div>
                 <label className="block text-[10px] font-semibold tracking-widest text-gray-400 mb-1.5">NOME</label>
-                <input 
-                  type="text" 
-                  placeholder="Nome completo" 
+                <input
+                  type="text"
+                  placeholder="Nome completo"
                   value={nome}
                   onChange={(e) => setNome(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-[#1e3a5f] placeholder-gray-300" 
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-[#1e3a5f] placeholder-gray-300"
                 />
               </div>
               <div>
                 <label className="block text-[10px] font-semibold tracking-widest text-gray-400 mb-1.5">EMAIL</label>
-                <input 
-                  type="email" 
-                  placeholder="email@exemplo.co.mz" 
+                <input
+                  type="email"
+                  placeholder="email@exemplo.co.mz"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-[#1e3a5f] placeholder-gray-300" 
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-[#1e3a5f] placeholder-gray-300"
                 />
               </div>
               <div>
                 <label className="block text-[10px] font-semibold tracking-widest text-gray-400 mb-1.5">SENHA</label>
-                <input 
-                  type="password" 
-                  placeholder="Minimo 6 caracteres" 
+                <input
+                  type="password"
+                  placeholder="Minimo 6 caracteres"
                   value={senha}
                   onChange={(e) => setSenha(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-[#1e3a5f] placeholder-gray-300" 
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-[#1e3a5f] placeholder-gray-300"
                 />
               </div>
               <div>
                 <label className="block text-[10px] font-semibold tracking-widest text-gray-400 mb-1.5">CONFIRMAR SENHA</label>
-                <input 
-                  type="password" 
-                  placeholder="Confirme sua senha" 
+                <input
+                  type="password"
+                  placeholder="Confirme sua senha"
                   value={confirmarSenha}
                   onChange={(e) => setConfirmarSenha(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-[#1e3a5f] placeholder-gray-300" 
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-[#1e3a5f] placeholder-gray-300"
                 />
               </div>
-              <button 
-                type="button" 
-                onClick={handleRegister} 
+              <button
+                type="button"
+                onClick={handleRegister}
                 disabled={isLoading}
                 className="w-full py-3 bg-[#1e3a5f] text-white rounded-xl text-sm font-medium hover:bg-[#162d4a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
