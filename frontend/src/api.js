@@ -8,6 +8,27 @@ export const handleLogout = () => {
     window.location.href = '/auth';
 }
 
+export const loginGoogleAPI = async (googleData) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/google-login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(googleData)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            return { error: true, message: data.error || 'Erro no login com Google' };
+        }
+
+        return data; // Retorna { token, user }
+    } catch (error) {
+        console.error('Erro na API do Google:', error);
+        return { error: true, message: 'Erro ao conectar ao servidor' };
+    }
+};
+
 export const loginAPI = async (email, password) => {
     try {
         const response = await fetch(`${API_BASE_URL}/auth/login`, {

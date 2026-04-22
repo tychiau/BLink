@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { loginAPI, registerAPI } from "../../api";
+import { GoogleLogin } from '@react-oauth/google';
+import { loginGoogleAPI, loginAPI, registerAPI } from "../../api";
 
 function cn(...v) {
   return v.filter(Boolean).join(" ");
@@ -97,6 +98,30 @@ export default function AuthPage() {
     } else {
       navigate("/");
     }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setIsLoading(true);
+    setErrorMessage("");
+
+    // Enviamos o token do Google e o perfil que está selecionado no estado do React
+    const result = await loginGoogleAPI({
+      token: credentialResponse.credential,
+      tipo_usuario: perfil
+    });
+
+    if (result.error) {
+      setErrorMessage(result.message);
+      setIsLoading(false);
+      return;
+    }
+
+    // Guardar dados e redireccionar
+    localStorage.setItem("accessToken", result.token);
+    localStorage.setItem("blink_user", JSON.stringify(result.user));
+
+    redirectByRole(result.user.tipo_usuario);
+    setIsLoading(false);
   };
 
   const handleLogin = async (e) => {
@@ -402,19 +427,26 @@ export default function AuthPage() {
                 <div className="flex-1 h-px bg-gray-100" />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { label: "Google", color: "#4285F4" },
-                  { label: "Facebook", color: "#1877F2" },
-                ].map(({ label, color }) => (
-                  <button
-                    key={label}
-                    type="button"
-                    className="flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
-                    <span style={{ color, fontWeight: 700, fontSize: 13 }}>■</span> {label}
-                  </button>
-                ))}
+              <div className="space-y-3">
+                {/* Botão Real do Google */}
+                <div className="w-full flex justify-center">
+                  <GoogleLogin
+                    onSuccess={handleGoogleSuccess}
+                    onError={() => setErrorMessage("Falha na autenticação com Google")}
+                    theme="outline"
+                    shape="pill"
+                    width="350" // Use um valor fixo em pixels que caiba no seu formulário
+                    size="large"
+                  />
+                </div>
+
+                {/* Outros botões sociais (como Facebook) se desejar manter o layout */}
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  <span style={{ color: "#1877F2", fontWeight: 700, fontSize: 13 }}>■</span> Facebook
+                </button>
               </div>
             </div>
           ) : (
