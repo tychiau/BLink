@@ -7,6 +7,7 @@ const pool = require('./src/config/db');
 const authRoutes = require('./src/routes/authRoutes');
 const protectedRoutes = require('./src/routes/protectedRoutes');
 const productRoutes = require('./src/routes/productRoutes');
+const intermediarioRoutes = require('./src/routes/intermediarioRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -33,6 +34,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/auth', authRoutes);
 app.use('/protected', protectedRoutes);
 app.use('/api', productRoutes);
+app.use('/api/intermediario', intermediarioRoutes);
 
 // Rota base
 app.get('/', (req, res) => {
