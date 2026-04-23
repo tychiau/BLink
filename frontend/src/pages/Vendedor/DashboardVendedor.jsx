@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "./DashboardVendedor.css";
 import CadastroProduto from './CadastroProduto';
 import Vendas from "./Vendas";
@@ -25,6 +26,7 @@ const getEstadoConfig = (estado) => {
 
 export default function DashboardVendedor() {
   const [activePage, setActivePage] = useState("Dashboard");
+  const navigate = useNavigate()
   const [usuarioLogado, setUsuarioLogado] = useState({ nome: "", email: "", tipo_usuario: "", id: null });
   const [produtos, setProdutos] = useState([]);
   const [stats, setStats] = useState({
@@ -296,7 +298,7 @@ export default function DashboardVendedor() {
           <input className="dv-search" type="text" placeholder="Pesquisar produtos ou pedidos..." />
         </div>
         <div className="dv-nav-icons">
-          <button className="dv-icon-btn">🔔</button>
+          <button className="dv-icon-btn" onClick={() => navigate('/vendedor/solicitacoes')}>🔔</button>
           <button className="dv-icon-btn">✉️</button>
           <div className="dv-avatar">{getInicial(usuarioLogado.nome)} <span>▾</span></div>
         </div>

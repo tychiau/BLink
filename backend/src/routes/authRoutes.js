@@ -2,12 +2,19 @@ const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
 const { authenticateToken } = require('../middlewares/authMiddleware');
-const { 
-  validateRegister, 
+const {
+  validateRegister,
   validateLogin,
   validatePasswordResetRequest,
   validatePasswordReset
 } = require('../middlewares/validationMiddleware');
+
+/**
+ * @route   POST /auth/google-login
+ * @desc    Login ou Registo via Google
+ * @access  Public
+ */
+router.post('/google-login', authController.googleLogin);
 
 /**
  * @route   POST /api/auth/register
