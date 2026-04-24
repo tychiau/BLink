@@ -1,7 +1,71 @@
 const bcrypt = require('bcryptjs');
 const User = require('../models/userModel');
 const PasswordReset = require('../models/passwordResetModel');
+const { OAuth2Client } = require('google-auth-library');
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const { generateAuthToken, generateRandomToken, generateExpirationDate } = require('../utils/tokenUtils');
+
+/**
+ * LOGIN / REGISTO via Google
+ */
+exports.googleLogin = async (req, res) => {
+  try {
+    const { token, tipo_usuario } = req.body;
+
+    // 1. Verificar a validade do token junto do Google
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    const { email, name, sub: googleId } = payload;
+
+    // 2. Tentar encontrar o utilizador pelo email
+    let user = await User.getByEmail(email.toLowerCase());
+
+    if (!user) {
+      // 3. Se não existe, cria um novo (Registo)
+      // Nota: Senha é nula pois a autenticação é externa
+      const userId = await User.create({
+        nome: name,
+        email: email.toLowerCase(),
+        senha: null,
+        tipo_usuario: tipo_usuario // Usa o perfil selecionado no frontend
+      });
+      user = await User.getById(userId);
+    } else {
+      if (user.tipo_usuario !== tipo_usuario) {
+        return res.status(403).json({
+          error: "Conflito de Perfil",
+          message: `Esta conta está registada como ${user.tipo_usuario}. Por favor, seleccione o perfil correcto para entrar.`
+        });
+      }
+    }
+
+    // 4. Gerar o token JWT do seu sistema
+    const systemToken = generateAuthToken({
+      id: user.id,
+      email: user.email,
+      tipo_usuario: user.tipo_usuario
+    });
+
+    res.json({
+      message: 'Autenticação Google realizada com sucesso!',
+      token: systemToken,
+      user: {
+        id: user.id,
+        nome: user.nome,
+        email: user.email,
+        tipo_usuario: user.tipo_usuario
+      }
+    });
+
+  } catch (error) {
+    console.error('Erro no Google Login:', error);
+    res.status(401).json({ error: 'Token do Google inválido ou expirado.' });
+  }
+};
 
 /**
  * REGISTO de novo utilizador
@@ -13,8 +77,8 @@ exports.register = async (req, res) => {
     // Verificar se email já existe
     const emailExists = await User.emailExists(email);
     if (emailExists) {
-      return res.status(409).json({ 
-        error: 'Email já está registado.' 
+      return res.status(409).json({
+        error: 'Email já está registado.'
       });
     }
 
@@ -53,8 +117,8 @@ exports.register = async (req, res) => {
 
   } catch (error) {
     console.error('Erro no registo:', error);
-    res.status(500).json({ 
-      error: 'Erro ao registar utilizador.' 
+    res.status(500).json({
+      error: 'Erro ao registar utilizador.'
     });
   }
 };
@@ -68,19 +132,19 @@ exports.login = async (req, res) => {
 
     // Buscar utilizador por email
     const user = await User.getByEmail(email.toLowerCase());
-    
+
     if (!user) {
-      return res.status(401).json({ 
-        error: 'Email ou password incorretos.' 
+      return res.status(401).json({
+        error: 'Email ou password incorretos.'
       });
     }
 
     // Verificar password
     const validPassword = await bcrypt.compare(password, user.senha);
-    
+
     if (!validPassword) {
-      return res.status(401).json({ 
-        error: 'Email ou password incorretos.' 
+      return res.status(401).json({
+        error: 'Email ou password incorretos.'
       });
     }
 
@@ -107,8 +171,8 @@ exports.login = async (req, res) => {
 
   } catch (error) {
     console.error('Erro no login:', error);
-    res.status(500).json({ 
-      error: 'Erro ao fazer login.' 
+    res.status(500).json({
+      error: 'Erro ao fazer login.'
     });
   }
 };
@@ -122,11 +186,11 @@ exports.requestPasswordReset = async (req, res) => {
 
     // Buscar utilizador
     const user = await User.getByEmail(email.toLowerCase());
-    
+
     if (!user) {
       // Por segurança, retornar sucesso mesmo que email não exista
-      return res.json({ 
-        message: 'Se o email existir, receberá instruções para redefinir a password.' 
+      return res.json({
+        message: 'Se o email existir, receberá instruções para redefinir a password.'
       });
     }
 
@@ -142,7 +206,7 @@ exports.requestPasswordReset = async (req, res) => {
     console.log(`Token de reset para ${email}: ${resetToken}`);
     console.log(`Link de reset: ${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`);
 
-    res.json({ 
+    res.json({
       message: 'Se o email existir, receberá instruções para redefinir a password.',
       // REMOVE ESTAS LINHAS EM PRODUÇÃO:
       debug_token: resetToken,
@@ -151,8 +215,8 @@ exports.requestPasswordReset = async (req, res) => {
 
   } catch (error) {
     console.error('Erro ao solicitar reset de password:', error);
-    res.status(500).json({ 
-      error: 'Erro ao processar pedido.' 
+    res.status(500).json({
+      error: 'Erro ao processar pedido.'
     });
   }
 };
@@ -166,10 +230,10 @@ exports.resetPassword = async (req, res) => {
 
     // Verificar se token é válido
     const resetData = await PasswordReset.getValidToken(token);
-    
+
     if (!resetData) {
-      return res.status(400).json({ 
-        error: 'Token inválido ou expirado.' 
+      return res.status(400).json({
+        error: 'Token inválido ou expirado.'
       });
     }
 
@@ -183,14 +247,14 @@ exports.resetPassword = async (req, res) => {
     // Marcar token como usado
     await PasswordReset.markAsUsed(token);
 
-    res.json({ 
-      message: 'Password redefinida com sucesso!' 
+    res.json({
+      message: 'Password redefinida com sucesso!'
     });
 
   } catch (error) {
     console.error('Erro ao redefinir password:', error);
-    res.status(500).json({ 
-      error: 'Erro ao redefinir password.' 
+    res.status(500).json({
+      error: 'Erro ao redefinir password.'
     });
   }
 };
@@ -204,8 +268,8 @@ exports.getProfile = async (req, res) => {
     const user = await User.getById(req.user.id);
 
     if (!user) {
-      return res.status(404).json({ 
-        error: 'Utilizador não encontrado.' 
+      return res.status(404).json({
+        error: 'Utilizador não encontrado.'
       });
     }
 
@@ -220,8 +284,8 @@ exports.getProfile = async (req, res) => {
 
   } catch (error) {
     console.error('Erro ao obter perfil:', error);
-    res.status(500).json({ 
-      error: 'Erro ao obter dados do utilizador.' 
+    res.status(500).json({
+      error: 'Erro ao obter dados do utilizador.'
     });
   }
 };

@@ -359,7 +359,7 @@ export default function DashboardVendedor() {
                       fontSize: '14px'
                     }}
                   >
-                    <span>🔄</span>
+                    <span></span>
                     {refreshing ? 'A recarregar...' : 'Recarregar Produtos'}
                   </button>
                 </div>
@@ -709,4 +709,4 @@ export default function DashboardVendedor() {
       )}
     </div>
   );
-}
+};
