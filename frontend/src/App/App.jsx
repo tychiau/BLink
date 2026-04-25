@@ -5,6 +5,7 @@ import ClienteDashboardPage from '../pages/Cliente/ClienteDashboardPage';
 import DashboardIntermediario from '../pages/Intermediario/DashboardIntermediario';
 import SolicitacoesVendedor from '../pages/Vendedor/SolicitacoesVendedor';
 import SolicitacoesIntermediario from '../pages/Intermediario/SolicitacoesIntermediario';
+import SolicitacoesCliente from '../pages/Cliente/SolicitacoesCliente';
 
 function App() {
   return (
@@ -20,6 +21,8 @@ function App() {
       <Route path="/intermediario/dashboard" element={<DashboardIntermediario />} />
       <Route path="/vendedor/solicitacoes" element={<SolicitacoesVendedor />} />
       <Route path="/intermediario/solicitacoes" element={<SolicitacoesIntermediario />} />
+      <Route path="/cliente/solicitacoes" element={<SolicitacoesCliente />} />
+      
       {/* FALLBACK */}
       <Route path="*" element={<div>Rota não encontrada</div>} />
     </Routes>
