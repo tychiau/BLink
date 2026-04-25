@@ -1,0 +1,687 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background-color: #f5f7fa;
+  color: #1a2a3a;
+  line-height: 1.5;
+}
+
+/* ============================================ */
+/* BARRA SUPERIOR */
+/* ============================================ */
+.top-bar {
+  background: white;
+  padding: 0.8rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eef2f6;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.top-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.btn-sair {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #5a6e7c;
+  padding: 0.3rem;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.btn-sair:hover {
+  background: #f0f2f5;
+  color: #e53e3e;
+}
+
+.logo {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #005a4c;
+}
+
+.top-bar-center {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.top-bar-center a {
+  text-decoration: none;
+  color: #5a6e7c;
+  font-size: 0.85rem;
+  transition: color 0.2s;
+}
+
+.top-bar-center a:hover {
+  color: #005a4c;
+}
+
+.top-bar-right {
+  display: flex;
+  gap: 1rem;
+}
+
+.top-bar-right a {
+  text-decoration: none;
+  color: #5a6e7c;
+  font-size: 0.85rem;
+}
+
+.btn-registrar {
+  background: #005a4c;
+  color: white !important;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+}
+
+/* ============================================ */
+/* CONTAINER PRINCIPAL */
+/* ============================================ */
+.perfil-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+/* ============================================ */
+/* PERFIL - FOTO ESQUERDA / INFO DIREITA */
+/* ============================================ */
+.perfil-header-card {
+  background: white;
+  border-radius: 20px;
+  padding: 1.5rem;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #eef2f6;
+}
+
+.perfil-foto {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.perfil-foto img {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #005a4c;
+  display: block;
+}
+
+.btn-trocar-foto {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  background: #005a4c;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  font-size: 0.7rem;
+  z-index: 5;
+}
+
+.perfil-info-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: left;
+}
+
+.perfil-info-container h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #1a2a3a;
+  margin: 0 0 0.3rem 0;
+}
+
+.verificado-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: #e8f5e9;
+  padding: 0.2rem 0.7rem;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #005a4c;
+  margin-bottom: 0.5rem;
+  width: fit-content;
+}
+
+.verificado-container i {
+  font-size: 0.65rem;
+}
+
+.avaliacao-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* ESTRELAS NA COR DO SISTEMA (#005a4c) */
+.stars-container {
+  display: flex;
+  gap: 0.15rem;
+}
+
+.stars-container .fa-star,
+.stars-container .fa-star-half-alt {
+  color: #005a4c !important;
+  font-size: 0.8rem;
+}
+
+.stars-container .far.fa-star {
+  color: #cbd5e1 !important;
+  font-size: 0.8rem;
+}
+
+.avaliacao-texto {
+  font-size: 0.75rem;
+  color: #5a6e7c;
+}
+
+.perfil-local, .perfil-membro {
+  font-size: 0.75rem;
+  color: #5a6e7c;
+  margin: 0.25rem 0;
+  display: flex;
+  align-items: center;
+}
+
+.perfil-local i, .perfil-membro i {
+  width: 18px;
+  font-size: 0.75rem;
+  margin-right: 0.5rem;
+  color: #005a4c;
+}
+
+/* ============================================ */
+/* ESTATÍSTICAS - ÍCONES CORRETOS */
+/* ============================================ */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  border: 1px solid #eef2f6;
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  background: #e8f5e9;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-icon i {
+  font-size: 1.4rem;
+  color: #005a4c;
+}
+
+.stat-card div {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-valor {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1a2a3a;
+}
+
+.stat-card small {
+  font-size: 0.65rem;
+  color: #5a6e7c;
+  letter-spacing: 0.3px;
+}
+
+/* Botão de simular venda */
+.teste-crescimento {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1.5rem;
+}
+
+.btn-simular-venda {
+  background: #005a4c;
+  color: white;
+  border: none;
+  border-radius: 40px;
+  padding: 0.4rem 1rem;
+  font-size: 0.7rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.btn-simular-venda:hover {
+  background: #00443a;
+}
+
+/* ============================================ */
+/* LAYOUT DUAS COLUNAS */
+/* ============================================ */
+.two-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.left-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Cards */
+.sobre-card, .especialidades-card, .produtos-card, .avaliacoes-card, .contato-card {
+  background: white;
+  border-radius: 20px;
+  padding: 1.2rem;
+  border: 1px solid #eef2f6;
+}
+
+.sobre-card h3, .especialidades-card h3, .produtos-card h3, .avaliacoes-card h3, .contato-card h3 {
+  font-size: 0.9rem;
+  margin-bottom: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #1a2a3a;
+  font-weight: 600;
+}
+
+.sobre-card p {
+  font-size: 0.8rem;
+  color: #5a6e7c;
+  line-height: 1.5;
+}
+
+/* Especialidades */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: #e8f5e9;
+  color: #005a4c;
+  padding: 0.3rem 0.5rem 0.3rem 0.8rem;
+  border-radius: 40px;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.remover-especialidade {
+  background: none;
+  border: none;
+  color: #005a4c;
+  cursor: pointer;
+  font-size: 0.65rem;
+  padding: 0 2px;
+}
+
+.remover-especialidade:hover {
+  color: #e53e3e;
+}
+
+.add-especialidade {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.add-especialidade input {
+  padding: 0.3rem 0.6rem;
+  border: 1px solid #eef2f6;
+  border-radius: 40px;
+  font-size: 0.7rem;
+  width: 110px;
+  background: #f5f7fa;
+}
+
+.add-especialidade button {
+  background: #005a4c;
+  border: none;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+}
+
+/* ============================================ */
+/* PRODUTOS */
+/* ============================================ */
+.produtos-card {
+  height: 100%;
+}
+
+.subtitulo {
+  font-size: 0.7rem;
+  color: #5a6e7c;
+  margin-bottom: 1rem;
+}
+
+.produtos-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.produto-card-telefone {
+  display: flex;
+  gap: 1rem;
+  background: #f5f7fa;
+  border-radius: 16px;
+  padding: 0.8rem;
+  border: 1px solid #eef2f6;
+  transition: all 0.2s;
+}
+
+.produto-card-telefone:hover {
+  background: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.produto-imagem-telefone {
+  width: 70px;
+  height: 70px;
+  flex-shrink: 0;
+}
+
+.produto-imagem-telefone img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.produto-info-telefone {
+  flex: 1;
+}
+
+.produto-info-telefone h4 {
+  font-size: 0.85rem;
+  margin-bottom: 0.2rem;
+  color: #1a2a3a;
+}
+
+.produto-descricao-telefone {
+  font-size: 0.7rem;
+  color: #5a6e7c;
+  margin-bottom: 0.3rem;
+  line-height: 1.3;
+}
+
+.produto-preco-telefone {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #005a4c;
+}
+
+/* ============================================ */
+/* AVALIAÇÕES E CONTATO */
+/* ============================================ */
+.two-columns-bottom {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.avaliacao-item {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid #eef2f6;
+}
+
+.avaliacao-item:last-child {
+  border-bottom: none;
+}
+
+.avaliacao-foto {
+  flex-shrink: 0;
+}
+
+.avaliacao-foto img {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avaliacao-conteudo {
+  flex: 1;
+}
+
+.avaliacao-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.2rem;
+  flex-wrap: wrap;
+}
+
+.avaliacao-header strong {
+  font-size: 0.8rem;
+  color: #1a2a3a;
+}
+
+.avaliacao-data {
+  font-size: 0.65rem;
+  color: #9aaebf;
+}
+
+.avaliacao-conteudo .stars-container {
+  margin-bottom: 0.3rem;
+}
+
+.avaliacao-texto-completo {
+  font-size: 0.75rem;
+  color: #5a6e7c;
+  line-height: 1.4;
+}
+
+.btn-ver-mais {
+  width: 100%;
+  background: white;
+  border: 1px solid #eef2f6;
+  color: #005a4c;
+  padding: 0.5rem;
+  border-radius: 40px;
+  margin-top: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-ver-mais:hover {
+  background: #f5f7fa;
+  border-color: #005a4c;
+}
+
+/* Contato */
+.contato-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.btn-whatsapp, .btn-ligar {
+  text-decoration: none;
+  text-align: center;
+  padding: 0.6rem;
+  border-radius: 40px;
+  font-weight: 500;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-whatsapp {
+  background: #25D366;
+  color: white;
+}
+
+.btn-ligar {
+  background: #005a4c;
+  color: white;
+}
+
+/* ============================================ */
+/* RODAPÉ */
+/* ============================================ */
+.rodape {
+  background: white;
+  padding: 2rem;
+  margin-top: 2rem;
+  border-top: 1px solid #eef2f6;
+}
+
+.rodape-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.rodape-col h4 {
+  font-size: 0.8rem;
+  color: #1a2a3a;
+  margin-bottom: 0.8rem;
+  font-weight: 600;
+}
+
+.rodape-col p {
+  font-size: 0.7rem;
+  color: #5a6e7c;
+  margin-bottom: 0.3rem;
+}
+
+.newsletter-input {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.newsletter-input input {
+  flex: 1;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid #eef2f6;
+  border-radius: 40px;
+  font-size: 0.7rem;
+  background: #f5f7fa;
+}
+
+.newsletter-input input:focus {
+  outline: none;
+  border-color: #005a4c;
+}
+
+.newsletter-input button {
+  background: #005a4c;
+  border: none;
+  border-radius: 40px;
+  padding: 0 1rem;
+  color: white;
+  cursor: pointer;
+}
+
+.rodape-copyright {
+  text-align: center;
+  border-top: 1px solid #eef2f6;
+  padding-top: 1.5rem;
+  font-size: 0.65rem;
+  color: #9aaebf;
+}
+
+/* ============================================ */
+/* RESPONSIVO */
+/* ============================================ */
+@media (max-width: 900px) {
+  .top-bar {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  .two-columns, .two-columns-bottom {
+    grid-template-columns: 1fr;
+  }
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .perfil-header-card {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .perfil-info-container {
+    text-align: center;
+  }
+  .verificado-container {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .avaliacao-wrapper {
+    justify-content: center;
+  }
+  .perfil-local, .perfil-membro {
+    justify-content: center;
+  }
+  .rodape-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}

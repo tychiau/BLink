@@ -1,0 +1,464 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background-color: #f5f7fa;
+  color: #1a2a3a;
+  line-height: 1.5;
+}
+
+/* ========== BARRA SUPERIOR ========== */
+.top-bar {
+  background: white;
+  padding: 0.8rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eef2f6;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.top-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.btn-sair {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #5a6e7c;
+  padding: 0.3rem;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.btn-sair:hover {
+  background: #f0f2f5;
+  color: #005a4c;
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #1b4d3e, #005a4c);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.top-bar-center {
+  display: flex;
+  gap: 2rem;
+}
+
+.top-bar-center a {
+  text-decoration: none;
+  color: #5a6e7c;
+  font-size: 0.9rem;
+  transition: color 0.2s;
+}
+
+.top-bar-center a:hover {
+  color: #005a4c;
+}
+
+.top-bar-right {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.top-bar-right a {
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.btn-login {
+  color: #5a6e7c;
+  padding: 0.3rem 0.8rem;
+}
+
+.btn-registrar {
+  background: #005a4c;
+  color: white;
+  padding: 0.4rem 1rem;
+  border-radius: 30px;
+}
+
+/* ========== CONTAINER PRINCIPAL - LARGURA REDUZIDA ========== */
+.listagem-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.header-intermediarios {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.foto-perfil-header {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #005a4c;
+}
+
+.page-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #1a2a3a;
+  margin: 0;
+}
+
+/* ========== FILTROS ========== */
+.filtros-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  background: white;
+  padding: 0.8rem 1.2rem;
+  border-radius: 60px;
+  margin-bottom: 2rem;
+  border: 1px solid #eef2f6;
+  position: relative;
+}
+
+.filtro-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  position: relative;
+}
+
+.filtro-label {
+  color: #5a6e7c;
+  font-weight: 500;
+}
+
+.filtro-select, .filtro-chip {
+  background: #f5f7fa;
+  padding: 0.3rem 0.8rem;
+  border-radius: 30px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #005a4c;
+  font-weight: 500;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  border: 1px solid #eef2f6;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  z-index: 10;
+  width: 180px;
+  margin-top: 5px;
+}
+
+.dropdown-item {
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.dropdown-item:hover {
+  background: #e8f5e9;
+  color: #005a4c;
+}
+
+.btn-fechar-lista {
+  background: none;
+  border: 1px solid #005a4c;
+  color: #005a4c;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-left: auto;
+  padding: 0.3rem 0.8rem;
+  border-radius: 30px;
+}
+
+.btn-fechar-lista:hover {
+  background: #e8f5e9;
+}
+
+/* ========== CARDS - LAYOUT FOTO ESQUERDA / CONTEÚDO DIREITA ========== */
+.intermediarios-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.intermediario-card {
+  background: white;
+  border-radius: 24px;
+  padding: 1.5rem;
+  border: 1px solid #eef2f6;
+  transition: box-shadow 0.2s;
+}
+
+.card-layout {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+/* Coluna da foto (esquerda) */
+.card-foto-coluna {
+  flex-shrink: 0;
+  width: 110px;
+  text-align: center;
+}
+
+.card-foto-coluna img {
+  width: 90px;
+  height: 90px;
+  border-radius: 20px;
+  object-fit: cover;
+  border: 2px solid #005a4c;
+  margin-bottom: 0.5rem;
+}
+
+/* NOME DO INTERMEDIÁRIO - TAMANHO REDUZIDO */
+.card-nome-esquerda {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1a2a3a;
+  margin: 0.3rem 0 0.2rem;
+  line-height: 1.2;
+}
+
+/* Avaliação apenas com texto */
+.avaliacao-esquerda {
+  text-align: center;
+}
+
+.avaliacao-esquerda .avaliacao-nota {
+  font-size: 0.7rem;
+  color: #005a4c;
+  font-weight: 600;
+}
+
+.avaliacao-esquerda .reviews-count {
+  font-size: 0.6rem;
+  color: #5a6e7c;
+}
+
+/* Coluna do conteúdo (direita) */
+.card-conteudo-coluna {
+  flex: 1;
+}
+
+.especialidades {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.8rem;
+}
+
+.especialidade-tag {
+  background: #e8f5e9;
+  color: #005a4c;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+}
+
+.card-descricao {
+  font-size: 0.85rem;
+  color: #5a6e7c;
+  margin-bottom: 1rem;
+  line-height: 1.4;
+  text-align: justify;
+}
+
+/* Stats containers */
+.stats-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.stat-card-fosco {
+  background: #f0f2f5;
+  border-radius: 16px;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.stat-card-fosco:hover {
+  background: #e8f5e9;
+}
+
+.stat-card-fosco i {
+  font-size: 1rem;
+  color: #005a4c;
+  width: 28px;
+}
+
+.stat-card-fosco div {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-valor {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1a2a3a;
+}
+
+.stat-rotulo {
+  font-size: 0.55rem;
+  color: #5a6e7c;
+  letter-spacing: 0.3px;
+}
+
+/* Botões */
+.card-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.btn-whatsapp, .btn-perfil {
+  text-decoration: none;
+  padding: 0.4rem 1rem;
+  border-radius: 40px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-whatsapp {
+  background: #005a4c;
+  color: white;
+}
+
+.btn-perfil {
+  background: white;
+  border: 1px solid #005a4c;
+  color: #005a4c;
+}
+
+.btn-perfil:hover {
+  background: #e8f5e9;
+}
+
+.lista-fechada-mensagem {
+  text-align: center;
+  padding: 3rem;
+  background: white;
+  border-radius: 24px;
+}
+
+.lista-fechada-mensagem button {
+  background: #005a4c;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 30px;
+  cursor: pointer;
+}
+
+/* ========== RODAPÉ - BLINK ========== */
+.rodape {
+  background: white;
+  padding: 2rem;
+  margin-top: 2rem;
+  border-top: 1px solid #eef2f6;
+}
+
+.rodape-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.rodape-col h4 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 0.8rem;
+  color: #005a4c;
+}
+
+.rodape-col p {
+  font-size: 0.75rem;
+  color: #5a6e7c;
+  margin-bottom: 0.3rem;
+}
+
+.rodape-copyright {
+  text-align: center;
+  border-top: 1px solid #eef2f6;
+  padding-top: 1.2rem;
+  font-size: 0.7rem;
+  color: #9aaebf;
+}
+
+/* ========== RESPONSIVO ========== */
+@media (max-width: 900px) {
+  .top-bar {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  .card-layout {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .stats-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .card-buttons {
+    justify-content: center;
+  }
+  .filtros-bar {
+    flex-direction: column;
+    align-items: stretch;
+    border-radius: 20px;
+  }
+  .btn-fechar-lista {
+    margin-left: 0;
+    justify-content: center;
+  }
+  .rodape-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .card-descricao {
+    text-align: center;
+  }
+}
