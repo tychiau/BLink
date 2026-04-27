@@ -152,6 +152,7 @@ function UserAvatar({ user, size = "md" }) {
 function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [notifs, setNotifs] = useState(NOTIFICACOES_INICIAIS);
+  const navigate = useNavigate();
 
   const naoLidas = notifs.filter((n) => !n.lida).length;
 
@@ -258,7 +259,9 @@ function NotificationBell() {
 
             {/* Rodapé */}
             <div className="border-t border-slate-100 px-4 py-3">
-              <button className="w-full rounded-xl bg-slate-50 py-2 text-xs font-extrabold text-slate-600 hover:bg-slate-100 transition">
+              <button 
+                onClick={() => navigate('/cliente/solicitacoes')}
+                className="w-full rounded-xl bg-slate-50 py-2 text-xs font-extrabold text-slate-600 hover:bg-slate-100 transition">
                 Ver todas as notificações
               </button>
             </div>
