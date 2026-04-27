@@ -1,6 +1,6 @@
 /* =============================================
    BLINK — DASHBOARD VENDEDOR
-   CSS reescrito e organizado
+   CSS COMPLETO E ORGANIZADO
    ============================================= */
 
 /* --- Reset --- */
@@ -32,18 +32,19 @@
   --verde-publicado:    #10b981;
   --cinza-vendido:      #6b7280;
   --vermelho-removido:  #ef4444;
-  --vermelho-excluir:   #ef4444;
-  --amarelo-pausar:     #f59e0b;
+  --vermelho-danger:    #e53e3e;
+  --vermelho-hover:     #c53030;
 
   --radius-sm:   6px;
   --radius-md:   8px;
   --radius-lg:   12px;
+  --radius-xl:   16px;
   --radius-full: 9999px;
 
   --shadow-card:  0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
   --shadow-modal: 0 20px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.10);
 
-  --font: 'Segoe UI', system-ui, sans-serif;
+  --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
 /* ============================================
@@ -104,6 +105,8 @@
   font-size: 13px;
   color: var(--cinza-texto);
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
 }
 
 .dv-search {
@@ -133,7 +136,6 @@
   justify-content: center;
   background: none;
   border: none;
-  font-size: 17px;
   cursor: pointer;
   width: 34px;
   height: 34px;
@@ -223,6 +225,8 @@
 .dv-menu-icon {
   font-size: 15px;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
 }
 
 .dv-sidebar-profile {
@@ -274,6 +278,7 @@
   flex: 1;
   overflow-y: auto;
   padding: 28px 32px;
+  background: #f8fafc;
 }
 
 /* --- Cabeçalho da página --- */
@@ -298,25 +303,30 @@
    CARDS DE ESTATÍSTICAS
    ============================================ */
 .dv-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
-  margin-bottom: 32px;
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
 }
 
 .dv-stat-card {
-  background-color: var(--branco);
+  flex: 1 1 auto;
+  min-width: 180px;
+  background: var(--branco);
   border: 1px solid var(--cinza-borda);
-  border-radius: var(--radius-lg);
-  padding: 18px;
-  box-shadow: var(--shadow-card);
+  border-radius: var(--radius-xl);
+  padding: 20px 16px;
+  transition: all 0.25s ease;
+}
+
+.dv-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(30, 58, 95, 0.08);
 }
 
 .dv-stat-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .dv-stat-icon-box {
@@ -327,23 +337,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 17px;
 }
 
 .dv-stat-label {
-  font-size: 10px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 500;
   color: var(--cinza-texto);
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 
 .dv-stat-value {
-  font-size: 26px;
-  font-weight: 800;
+  font-size: 28px;
+  font-weight: 700;
   color: var(--preto);
-  line-height: 1;
+  margin: 0;
 }
 
 /* ============================================
@@ -354,12 +361,19 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 14px;
+  margin-top: 8px;
 }
 
 .dv-section-title {
   font-size: 17px;
   font-weight: 700;
   color: var(--preto);
+}
+
+.dv-section-title::before,
+.dv-section-title::after {
+  content: none !important;
+  display: none !important;
 }
 
 .dv-ver-todos {
@@ -377,131 +391,13 @@
   text-decoration: underline;
 }
 
-/* --- Grid de cards de produto --- */
+/* --- Grid de produtos horizontal --- */
 .dv-produtos-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 18px;
-}
-
-.dv-produto-card {
-  background-color: var(--branco);
-  border: 1px solid var(--cinza-borda);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  box-shadow: var(--shadow-card);
-  transition: transform 0.18s, box-shadow 0.18s;
-}
-
-.dv-produto-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
-}
-
-.dv-produto-img-wrapper {
-  position: relative;
-  height: 190px;
-  background-color: var(--cinza-fundo);
-}
-
-.dv-produto-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-/* --- Badges de estado --- */
-.dv-produto-badge {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 3px 9px;
-  border-radius: var(--radius-full);
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-}
-
-.dv-badge--rascunho   { background-color: var(--laranja-rascunho);  color: #fff; }
-.dv-badge--aguardando { background-color: var(--azul-aguardando);   color: #fff; }
-.dv-badge--publicado  { background-color: var(--verde-publicado);   color: #fff; }
-.dv-badge--vendido    { background-color: var(--cinza-vendido);     color: #fff; }
-.dv-badge--removido   { background-color: var(--vermelho-removido); color: #fff; }
-
-/* --- Info do card --- */
-.dv-produto-info {
-  padding: 14px 16px 16px;
-}
-
-.dv-produto-categoria {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--azul-escuro);
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-
-.dv-produto-nome-preco {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin: 5px 0 6px;
-  gap: 8px;
-}
-
-.dv-produto-nome {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--preto);
-  flex: 1;
-  line-height: 1.3;
-}
-
-.dv-produto-preco {
-  font-size: 14px;
-  font-weight: 800;
-  color: var(--preto);
-  white-space: nowrap;
-}
-
-.dv-produto-intermediarios {
-  font-size: 12px;
-  color: var(--cinza-texto);
-  margin-bottom: 12px;
-}
-
-.dv-produto-acoes {
-  display: flex;
-  gap: 6px;
+  flex-direction: row;
+  gap: 16px;
   flex-wrap: wrap;
 }
-
-/* ============================================
-   LISTA DE PRODUTOS (página "Meus Produtos")
-   ============================================ */
-.dv-produtos-list {
-  width: 100%;
-}
-
-/* ============================================
-   PÁGINA EM CONSTRUÇÃO
-   ============================================ */
-.dv-em-breve {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 300px;
-  color: var(--cinza-texto);
-  gap: 12px;
-  text-align: center;
-}
-
-.dv-em-breve span { font-size: 48px; }
-.dv-em-breve h2   { font-size: 18px; font-weight: 700; color: var(--preto); }
-.dv-em-breve p    { font-size: 13px; }
 
 /* ============================================
    TOAST / NOTIFICAÇÕES
@@ -528,35 +424,58 @@
 }
 
 /* ============================================
-   MODAL DE EDIÇÃO
+   MODAL DE EDIÇÃO (MELHORADO)
    ============================================ */
 .dv-modal-overlay {
   position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.55);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
+  z-index: 10000;
   padding: 16px;
 }
 
+.dv-modal-container-edit {
+  background: var(--branco);
+  border-radius: 20px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-modal);
+  animation: modalFadeIn 0.2s ease-out;
+}
+
 .dv-modal-container {
-  background-color: var(--branco);
-  border-radius: var(--radius-lg);
-  width: 100%;
+  background: var(--branco);
+  border-radius: 20px;
+  width: 90%;
   max-width: 460px;
   max-height: 82vh;
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-modal);
-  animation: modalIn 0.22s ease;
+  animation: modalFadeIn 0.2s ease-out;
   overflow: hidden;
 }
 
-@keyframes modalIn {
-  from { opacity: 0; transform: scale(0.96) translateY(8px); }
-  to   { opacity: 1; transform: scale(1)    translateY(0);   }
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 /* Cabeçalho do modal */
@@ -564,44 +483,42 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: 20px 24px;
   border-bottom: 1px solid var(--cinza-borda);
+  background: var(--branco);
   flex-shrink: 0;
 }
 
 .dv-modal-header h3 {
-  font-size: 17px;
-  font-weight: 700;
+  font-size: 18px;
+  font-weight: 600;
   color: var(--preto);
   margin: 0;
 }
 
 .dv-modal-close {
+  background: #f1f5f9;
+  border: none;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-sm);
-  background: none;
-  border: none;
-  font-size: 22px;
-  line-height: 1;
-  color: var(--cinza-texto);
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  border-radius: 8px;
+  transition: all 0.2s;
 }
 
 .dv-modal-close:hover {
-  background-color: var(--cinza-fundo);
-  color: var(--preto);
+  background: #e2e8f0;
 }
 
 /* Corpo do modal */
 .dv-modal-body {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
+  padding: 20px 24px;
+  max-height: 60vh;
 }
 
 /* Rodapé do modal */
@@ -609,47 +526,98 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 10px;
-  padding: 14px 20px;
+  gap: 12px;
+  padding: 16px 24px;
   border-top: 1px solid var(--cinza-borda);
-  background-color: var(--cinza-fundo-modal);
+  background: #f8fafc;
   flex-shrink: 0;
 }
 
 /* Botões do modal */
 .dv-btn-cancel {
-  padding: 8px 16px;
-  border-radius: var(--radius-md);
-  font-size: 13px;
-  font-weight: 500;
-  font-family: var(--font);
-  cursor: pointer;
+  padding: 10px 20px;
+  background: #f1f5f9;
   border: 1px solid var(--cinza-borda);
-  background: transparent;
-  color: var(--cinza-texto);
-  transition: background 0.15s, border-color 0.15s;
+  border-radius: 10px;
+  color: #475569;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
 .dv-btn-cancel:hover {
-  background-color: var(--cinza-fundo);
-  border-color: #cbd5e0;
+  background: #e2e8f0;
 }
 
 .dv-btn-save {
-  padding: 8px 18px;
-  border-radius: var(--radius-md);
-  font-size: 13px;
-  font-weight: 600;
-  font-family: var(--font);
-  cursor: pointer;
+  padding: 10px 24px;
+  background: var(--azul-escuro);
   border: none;
-  background-color: var(--azul-escuro);
-  color: #fff;
-  transition: background 0.15s, transform 0.1s;
+  border-radius: 10px;
+  color: var(--branco);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.dv-btn-save:hover  { background-color: var(--azul-hover); }
-.dv-btn-save:active { transform: scale(0.98); }
+.dv-btn-save:hover {
+  background: var(--azul-hover);
+  transform: translateY(-1px);
+}
+
+.dv-btn-danger {
+  padding: 10px 24px;
+  background: var(--vermelho-danger);
+  border: none;
+  border-radius: 10px;
+  color: var(--branco);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dv-btn-danger:hover {
+  background: var(--vermelho-hover);
+  transform: translateY(-1px);
+}
+
+/* ============================================
+   MODAL DE CONFIRMAÇÃO (EXCLUSÃO PERSONALIZADA)
+   ============================================ */
+.dv-modal-confirm {
+  background: var(--branco);
+  border-radius: 20px;
+  width: 90%;
+  max-width: 400px;
+  padding: 28px 24px;
+  text-align: center;
+  box-shadow: var(--shadow-modal);
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+.dv-modal-confirm-icon {
+  margin-bottom: 16px;
+}
+
+.dv-modal-confirm h3 {
+  margin: 0 0 12px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--preto);
+}
+
+.dv-modal-confirm p {
+  margin: 0 0 24px 0;
+  font-size: 14px;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.dv-modal-confirm-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
 
 /* ============================================
    FORMULÁRIO (dentro do modal)
@@ -664,17 +632,24 @@
 
 .dv-label {
   display: block;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--cinza-texto);
   text-transform: uppercase;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.5px;
   margin-bottom: 6px;
 }
 
-.dv-input {
+.dv-row-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.dv-input, .dv-select, .dv-textarea {
   width: 100%;
-  padding: 9px 12px;
+  padding: 10px 12px;
   border: 1px solid var(--cinza-borda);
   border-radius: var(--radius-md);
   font-size: 14px;
@@ -685,9 +660,9 @@
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-.dv-input:focus {
+.dv-input:focus, .dv-select:focus, .dv-textarea:focus {
   border-color: var(--azul-escuro);
-  box-shadow: 0 0 0 3px rgba(45,74,110,0.10);
+  box-shadow: 0 0 0 3px rgba(45, 74, 110, 0.10);
 }
 
 .dv-input:disabled {
@@ -697,23 +672,8 @@
 }
 
 .dv-textarea {
-  width: 100%;
-  padding: 9px 12px;
-  border: 1px solid var(--cinza-borda);
-  border-radius: var(--radius-md);
-  font-size: 14px;
-  font-family: var(--font);
-  color: var(--preto);
-  background-color: var(--branco);
-  outline: none;
   resize: vertical;
   min-height: 80px;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-
-.dv-textarea:focus {
-  border-color: var(--azul-escuro);
-  box-shadow: 0 0 0 3px rgba(45,74,110,0.10);
 }
 
 .dv-hint {
@@ -724,11 +684,151 @@
 }
 
 /* ============================================
+   PÁGINA EM CONSTRUÇÃO
+   ============================================ */
+.dv-em-breve {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: var(--cinza-texto);
+  gap: 12px;
+  text-align: center;
+}
+
+.dv-em-breve h2 { font-size: 18px; font-weight: 700; color: var(--preto); }
+.dv-em-breve p  { font-size: 13px; }
+
+/* ============================================
+   BOTÕES DE AÇÃO DOS PRODUTOS
+   ============================================ */
+.dv-produto-acoes button,
+.dv-acao-btn {
+  padding: 5px 12px;
+  background-color: var(--azul-escuro);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.dv-produto-acoes button:hover,
+.dv-acao-btn:hover {
+  background-color: var(--azul-hover);
+  transform: translateY(-1px);
+}
+
+/* Botão de perigo (excluir) */
+.dv-produto-acoes button:last-child {
+  background-color: transparent;
+  color: #a32d2d;
+  border: 0.5px solid #f7c1c1;
+}
+
+.dv-produto-acoes button:last-child:hover {
+  background-color: #fcebeb;
+  transform: translateY(-1px);
+}
+
+/* ============================================
+   CARDS DE PRODUTOS - LAYOUT RETANGULAR
+   ============================================ */
+.dv-produtos-grid-retangular {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.dv-produto-card-retangular {
+  width: 260px;
+  background: var(--branco);
+  border: 1px solid var(--cinza-borda);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  transition: all 0.25s ease;
+  cursor: pointer;
+}
+
+.dv-produto-card-retangular:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(30, 58, 95, 0.08);
+}
+
+.dv-produto-imagem-retangular {
+  width: 100%;
+  height: 150px;
+  background-color: var(--cinza-fundo);
+  object-fit: cover;
+}
+
+.dv-produto-info-retangular {
+  padding: 14px;
+}
+
+.dv-produto-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 6px;
+}
+
+.dv-produto-nome-retangular {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--preto);
+  margin: 0;
+  flex: 1;
+}
+
+.dv-produto-badge-pequeno {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 20px;
+  flex-shrink: 0;
+}
+
+.dv-produto-categoria-retangular {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--azul-escuro);
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.dv-produto-preco-retangular {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--preto);
+  margin: 8px 0;
+}
+
+.dv-produto-localizacao-retangular {
+  font-size: 11px;
+  color: var(--cinza-texto);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.dv-produto-acoes-retangular {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ============================================
    RESPONSIVIDADE
    ============================================ */
 @media (max-width: 1100px) {
-  .dv-stats-grid    { grid-template-columns: repeat(2, 1fr); }
-  .dv-produtos-grid { grid-template-columns: 1fr; }
+  .dv-stats-grid { flex-direction: row; flex-wrap: wrap; }
 }
 
 @media (max-width: 768px) {
@@ -738,28 +838,40 @@
   .dv-menu-item span:not(.dv-menu-icon),
   .dv-profile-info { display: none; }
 
-  .dv-menu-item       { justify-content: center; padding: 10px; }
+  .dv-menu-item { justify-content: center; padding: 10px; }
   .dv-sidebar-profile { justify-content: center; padding: 12px 0; }
 
   /* Main */
   .dv-main { padding: 16px; }
 
-  .dv-stats-grid    { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-  .dv-produtos-grid { grid-template-columns: 1fr; }
+  .dv-stats-grid { flex-direction: column; gap: 10px; }
+  
+  .dv-stat-card { min-width: auto; }
 
-  /* Ações do produto */
-  .dv-produto-acoes         { flex-direction: column; }
-  .dv-produto-acoes button  { width: 100% !important; margin-right: 0 !important; }
+  /* Produtos */
+  .dv-produtos-grid-retangular { justify-content: center; }
+
+  /* Ações do produto - todos os botões ficam empilhados */
+  .dv-produto-acoes { flex-direction: column; }
+  .dv-produto-acoes button { width: 100%; margin-bottom: 6px; }
 
   /* Modal */
-  .dv-modal-overlay    { padding: 8px; align-items: flex-end; }
-  .dv-modal-container  { max-width: 100%; max-height: 92vh; border-radius: 14px 14px 0 0; }
-  .dv-modal-footer     { flex-direction: column-reverse; }
+  .dv-modal-overlay { padding: 8px; align-items: flex-end; }
+  .dv-modal-container-edit,
+  .dv-modal-container { max-width: 100%; max-height: 92vh; border-radius: 14px 14px 0 0; }
+  .dv-modal-footer { flex-direction: column-reverse; }
   .dv-btn-cancel,
-  .dv-btn-save         { width: 100%; text-align: center; justify-content: center; }
+  .dv-btn-save,
+  .dv-btn-danger { width: 100%; text-align: center; }
+
+  .dv-row-2col { grid-template-columns: 1fr; gap: 12px; }
 }
 
 @media (max-width: 480px) {
-  .dv-stats-grid { grid-template-columns: 1fr; }
-  .dv-welcome    { font-size: 20px; }
+  .dv-welcome { font-size: 20px; }
+  
+  .dv-modal-confirm { width: 95%; padding: 20px; }
+  
+  .dv-modal-confirm-buttons { flex-direction: column; }
+  .dv-modal-confirm-buttons button { width: 100%; }
 }

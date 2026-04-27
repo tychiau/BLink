@@ -1,6 +1,6 @@
 // frontend/src/api.js
 
-const API_BASE_URL = 'https://blink-oz62.onrender.com';
+const API_BASE_URL = 'http://localhost:3000';
 
 export const handleLogout = () => {
     localStorage.removeItem('blink_user');
@@ -22,7 +22,7 @@ export const loginGoogleAPI = async (googleData) => {
             return { error: true, message: data.error || 'Erro no login com Google' };
         }
 
-        return data; // Retorna { token, user }
+        return data;
     } catch (error) {
         console.error('Erro na API do Google:', error);
         return { error: true, message: 'Erro ao conectar ao servidor' };
@@ -116,6 +116,11 @@ export const productsAPI = {
 
     createProduct: async (token, productData) => {
         try {
+            console.log("=== API createProduct ===");
+            console.log("URL:", `${API_BASE_URL}/api/produtos`);
+            console.log("Dados recebidos:", JSON.stringify(productData, null, 2));
+            console.log("provincia no productData:", productData.provincia);
+            
             const response = await fetch(`${API_BASE_URL}/api/produtos`, {
                 method: 'POST',
                 headers: {
@@ -125,12 +130,15 @@ export const productsAPI = {
                 body: JSON.stringify(productData)
             });
 
+            const data = await response.json();
+            console.log("Resposta da API:", data);
+            console.log("Status da resposta:", response.status);
+
             if (!response.ok) {
-                const error = await response.json();
-                return { error: true, message: error.message || 'Erro ao criar produto' };
+                return { error: true, message: data.message || 'Erro ao criar produto' };
             }
 
-            return await response.json();
+            return data;
         } catch (error) {
             console.error('Erro ao criar produto:', error);
             return { error: true, message: 'Erro ao conectar ao servidor' };
@@ -228,6 +236,49 @@ export const productsAPI = {
             return { error: true, message: 'Erro ao conectar ao servidor' };
         }
     }
+    
+};
+// frontend/src/api.js
+
+// ... todo o código existente ...
+
+// Adicione esta linha com os outros exports
+export const usuariosAPI = {
+    getIntermediarios: async (token) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/usuarios/intermediarios`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            return await response.json();
+        } catch (error) {
+            console.error('Erro ao buscar intermediários:', error);
+            return { error: true, message: 'Erro ao conectar ao servidor' };
+        }
+    }
 };
 
-export default { handleLogout, loginAPI, registerAPI, productsAPI };
+// Já existe o intermediariosAPI, mantenha, please:
+export const intermediariosAPI = {
+    listarIntermediarios: async (token) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/intermediario/listar`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            return await response.json();
+        } catch (error) {
+            console.error('Erro ao buscar intermediários:', error);
+            return { error: true, message: 'Erro ao conectar ao servidor' };
+        }
+    }
+};
+
+// Atualize o export default no final do arquivo:
+export default { handleLogout, loginAPI, registerAPI, productsAPI, usuariosAPI, intermediariosAPI };

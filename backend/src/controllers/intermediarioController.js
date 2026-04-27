@@ -1,4 +1,5 @@
 const Intermediario = require('../models/intermediarioModel');
+const User = require('../models/userModel'); // Adicione esta linha
 
 /**
  * Estatísticas gerais do intermediário (dashboard principal)
@@ -172,5 +173,57 @@ exports.cancelarSolicitacao = async (req, res) => {
     } catch (error) {
         console.error('Erro em cancelarSolicitacao:', error);
         res.status(500).json({ message: 'Erro ao cancelar solicitação.' });
+    }
+};
+
+/**
+ * Listar todos os intermediários disponíveis (para vendedores)
+ * GET /api/intermediario/listar
+ */
+// backend/src/controllers/intermediarioController.js
+
+/**
+ * Listar todos os intermediários disponíveis (para vendedores)
+ * GET /api/intermediario/listar
+ */
+exports.listarIntermediarios = async (req, res) => {
+    try {
+        const db = require('../config/db');
+        
+        const [intermediarios] = await db.execute(
+            `SELECT 
+                id, 
+                nome, 
+                email, 
+                tipo_usuario,
+                status,
+                data_criacao
+             FROM usuarios 
+             WHERE tipo_usuario = 'intermediario' 
+             AND status = 'ativo'
+             ORDER BY nome ASC`
+        );
+        
+        // Formatar os dados para o frontend
+        const formatados = intermediarios.map(inter => ({
+            id: inter.id,
+            nome: inter.nome,
+            email: inter.email || '',
+            tipo_usuario: inter.tipo_usuario,
+            status: inter.status,
+            data_criacao: inter.data_criacao,
+            telefone: 'N/A',
+            avaliacao: 4.5,
+            cidade: 'N/A'
+        }));
+        
+        console.log(`Listando ${formatados.length} intermediários`);
+        res.status(200).json(formatados);
+    } catch (error) {
+        console.error('Erro em listarIntermediarios:', error);
+        res.status(500).json({ 
+            error: true, 
+            message: 'Erro ao buscar intermediários' 
+        });
     }
 };

@@ -14,6 +14,7 @@ const Product = {
                     p.comissao_intermediario,
                     p.estado, 
                     p.foto_produto,
+                    p.provincia,
                     DATE_FORMAT(p.data_cadastro, '%d/%m/%Y %H:%i') as data_cadastro
                 FROM produtos p
                 WHERE p.vendedor_id = ? AND p.estado != 'removido'
@@ -43,6 +44,7 @@ const Product = {
                     preco_minimo: parseFloat(produto.preco_minimo),
                     comissao_intermediario: parseFloat(produto.comissao_intermediario || 0),
                     estado: produto.estado,
+                    provincia: produto.provincia || '',
                     data_cadastro: produto.data_cadastro,
                     foto_url: foto_url
                 };
@@ -60,8 +62,11 @@ const Product = {
             const sql = 'SELECT * FROM produtos WHERE id = ?';
             const [rows] = await db.execute(sql, [id]);
             
-            if (rows[0] && rows[0].foto_produto && Buffer.isBuffer(rows[0].foto_produto)) {
-                rows[0].foto_url = `data:image/jpeg;base64,${rows[0].foto_produto.toString('base64')}`;
+            if (rows[0]) {
+                if (rows[0].foto_produto && Buffer.isBuffer(rows[0].foto_produto)) {
+                    rows[0].foto_url = `data:image/jpeg;base64,${rows[0].foto_produto.toString('base64')}`;
+                }
+                rows[0].provincia = rows[0].provincia || '';
             }
             
             return rows[0];
@@ -80,27 +85,40 @@ const Product = {
             preco_minimo, 
             comissao_intermediario, 
             estado,
-            foto_produto 
+            foto_produto,
+            provincia
         } = produtoData;
         
         try {
+            console.log("=== MODEL create ===");
+            console.log("Provincia recebida:", provincia);
+            
             let fotoBuffer = null;
             if (foto_produto && foto_produto.startsWith('data:image')) {
                 const base64Data = foto_produto.split(',')[1];
                 if (base64Data) {
                     fotoBuffer = Buffer.from(base64Data, 'base64');
                 }
-            } else if (foto_produto && Buffer.isBuffer(foto_produto)) {
-                fotoBuffer = foto_produto;
             }
             
+            // SOLUÇÃO: Especificar explicitamente os nomes das colunas
+            // Assim a ordem NÃO importa!
             const sql = `
                 INSERT INTO produtos 
-                (vendedor_id, categoria_id, nome, descricao, preco_minimo, 
-                 comissao_intermediario, estado, foto_produto, data_cadastro) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                SET 
+                    vendedor_id = ?,
+                    categoria_id = ?,
+                    nome = ?,
+                    descricao = ?,
+                    preco_minimo = ?,
+                    comissao_intermediario = ?,
+                    estado = ?,
+                    foto_produto = ?,
+                    provincia = ?,
+                    data_cadastro = NOW()
             `;
-            const [result] = await db.execute(sql, [
+            
+            const values = [
                 vendedor_id,
                 categoria_id || null,
                 nome,
@@ -108,8 +126,17 @@ const Product = {
                 preco_minimo,
                 comissao_intermediario || 0,
                 estado || 'rascunho',
-                fotoBuffer
-            ]);
+                fotoBuffer,
+                provincia || null
+            ];
+            
+            console.log("SQL:", sql);
+            console.log("Values:", values);
+            console.log("Provincia no values[8]:", values[8]);
+            
+            const [result] = await db.execute(sql, values);
+            console.log("Produto criado ID:", result.insertId);
+            
             return result.insertId;
         } catch (error) {
             console.error("Erro ao criar produto:", error.message);
@@ -117,7 +144,6 @@ const Product = {
         }
     },
 
-    // UPDATE CORRIGIDO
     update: async (id, produtoData) => {
         const { 
             categoria_id, 
@@ -125,7 +151,8 @@ const Product = {
             descricao, 
             preco_minimo, 
             comissao_intermediario, 
-            estado
+            estado,
+            provincia
         } = produtoData;
         
         try {
@@ -156,6 +183,10 @@ const Product = {
                 updates.push("estado = ?");
                 params.push(estado);
             }
+            if (provincia !== undefined) {
+                updates.push("provincia = ?");
+                params.push(provincia);
+            }
             
             if (updates.length === 0) {
                 return false;
@@ -164,7 +195,7 @@ const Product = {
             const sql = `UPDATE produtos SET ${updates.join(", ")} WHERE id = ?`;
             params.push(id);
             
-            console.log("SQL:", sql);
+            console.log("SQL UPDATE:", sql);
             console.log("Params:", params);
             
             const [result] = await db.execute(sql, params);
