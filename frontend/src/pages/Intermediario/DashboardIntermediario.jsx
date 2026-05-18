@@ -1,8 +1,14 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom';
+import api, { intermediarioAPI, handleLogout } from "../../api";
 import "./DashboardIntermediario.css";
 
-const API_BASE_URL = 'https://blink-oz62.onrender.com/api';
+const STAT_ICONS = {
+  produtosAtivos: "📦",
+  vendasRealizadas: "📈",
+  comissaoMes: "💰",
+  taxaConversao: "🎯",
+};
 
 const STATS_CONFIG = [
   { key: "produtosAtivos", badge: "+12%", badgeType: "green", label: "PRODUTOS ATIVOS" },
@@ -10,29 +16,6 @@ const STATS_CONFIG = [
   { key: "comissaoMes", badge: "2.4k MZM", badgeType: "blue", label: "COMISSÃO DO MÊS", highlight: true },
   { key: "taxaConversao", badge: "High", badgeType: "orange", label: "TAXA DE CONVERSÃO" },
 ];
-
-const STAT_ICONS = {
-  produtosAtivos: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4" />
-    </svg>
-  ),
-  vendasRealizadas: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" />
-    </svg>
-  ),
-  comissaoMes: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-    </svg>
-  ),
-  taxaConversao: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
-    </svg>
-  ),
-};
 
 const STATS_VAZIOS = {
   produtosAtivos: "0",
@@ -56,23 +39,35 @@ export default function DashboardIntermediario() {
   const [cancelandoId, setCancelandoId] = useState(null);
   const perfilRef = useRef(null);
 
-  // Função para verificar tipo de usuário
+  // FUNÇÃO PARA EXECUTAR O LOGOUT CENTRALIZADO
+  const executarLogout = () => {
+    try {
+      // Executa a limpeza de cookies/tokens configurada no seu ficheiro de api
+      if (typeof handleLogout === "function") {
+        handleLogout();
+      }
+    } catch (err) {
+      console.error("Erro ao invocar handleLogout do ficheiro de api:", err);
+    } finally {
+      // Garante a limpeza local dos dados da sessão actual
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('blink_user');
+      navigate('/auth');
+    }
+  };
+
   const verificarTipoUsuario = () => {
     const user = localStorage.getItem("blink_user");
     if (user) {
       const userData = JSON.parse(user);
       if (userData.tipo_usuario !== 'intermediario') {
-        console.log("Usuário não é intermediário. Redirecionando...");
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('blink_user');
-        navigate('/auth');
+        executarLogout();
         return false;
       }
     }
     return true;
   };
 
-  // Fechar dropdown do perfil
   useEffect(() => {
     const fechar = (e) => {
       if (perfilRef.current && !perfilRef.current.contains(e.target)) {
@@ -83,7 +78,6 @@ export default function DashboardIntermediario() {
     return () => document.removeEventListener('mousedown', fechar);
   }, []);
 
-  // Buscar dados do perfil do localStorage
   const fetchPerfil = async () => {
     setLoadingPerfil(true);
     try {
@@ -120,53 +114,30 @@ export default function DashboardIntermediario() {
     if (!perfil) fetchPerfil();
   };
 
-  // Função para obter o token
   const getToken = () => {
-    const token = localStorage.getItem("accessToken");
-    console.log("Token obtido:", token ? "Presente" : "Ausente");
-    return token;
+    return localStorage.getItem("accessToken");
   };
 
-  // Buscar TODOS os produtos publicados da API (exceto os que já foram solicitados pelo intermediário)
   const fetchProdutos = async () => {
     setLoadingProdutos(true);
     try {
       const token = getToken();
       if (!token) {
-        console.error("Token não encontrado. Faça login novamente.");
-        setLoadingProdutos(false);
-        navigate('/auth');
+        executarLogout();
         return;
       }
 
-      console.log("Buscando TODOS os produtos publicados...");
+      const data = await intermediarioAPI.getOportunidades(token);
 
-      const response = await fetch(`${API_BASE_URL}/intermediario/oportunidades`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      if (data.error) {
+        if (data.status === 403 || data.status === 401) {
+          console.error("Token inválido ou expirado.");
         }
-      });
-
-      console.log("Resposta status:", response.status);
-
-      if (response.status === 403 || response.status === 401) {
-        console.error("Token inválido ou expirado.");
-        setLoadingProdutos(false);
+        setProdutos([]);
         return;
       }
-
-      if (!response.ok) {
-        throw new Error("Erro ao buscar produtos");
-      }
-
-      const data = await response.json();
-      console.log("Produtos recebidos da API:", data);
-      console.log("Quantidade de produtos:", data.length);
 
       if (Array.isArray(data)) {
-        // Filtrar produtos que NÃO foram solicitados (status !== 'pendente')
         const produtosNaoSolicitados = data.filter(produto =>
           produto.status_solicitacao !== 'pendente' && produto.status_solicitacao !== 'aceite'
         );
@@ -187,43 +158,25 @@ export default function DashboardIntermediario() {
           status_solicitacao: produto.status_solicitacao || null
         }));
         setProdutos(produtosFormatados);
-        console.log(`${produtosFormatados.length} produtos disponíveis para solicitação`);
       } else {
-        console.error("Dados não são um array:", data);
         setProdutos([]);
       }
     } catch (error) {
-      console.error("Erro ao buscar produtos:", error);
+      console.error("Erro ao processar produtos:", error);
       setProdutos([]);
     } finally {
       setLoadingProdutos(false);
     }
   };
 
-  // Buscar estatísticas da API
   const fetchStats = async () => {
     try {
       const token = getToken();
       if (!token) return;
 
-      const response = await fetch(`${API_BASE_URL}/intermediario/stats`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const data = await intermediarioAPI.getStats(token);
 
-      if (response.status === 403 || response.status === 401) {
-        console.error("Token inválido ao buscar stats");
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error("Erro ao buscar estatísticas");
-      }
-
-      const data = await response.json();
+      if (data.error) return;
 
       if (data) {
         setStats({
@@ -234,34 +187,18 @@ export default function DashboardIntermediario() {
         });
       }
     } catch (error) {
-      console.error("Erro ao buscar estatísticas:", error);
+      console.error("Erro ao processar estatísticas:", error);
     }
   };
 
-  // Buscar meus produtos ativos (já aceites)
   const fetchMeusProdutos = async () => {
     try {
       const token = getToken();
       if (!token) return;
 
-      const response = await fetch(`${API_BASE_URL}/intermediario/produtos-ativos`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const data = await intermediarioAPI.getMeusProdutosAtivos(token);
 
-      if (response.status === 403 || response.status === 401) {
-        console.error("Token inválido ao buscar meus produtos");
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error("Erro ao buscar meus produtos");
-      }
-
-      const data = await response.json();
+      if (data.error) return;
 
       if (Array.isArray(data)) {
         const produtosFormatados = data.map(produto => ({
@@ -273,39 +210,20 @@ export default function DashboardIntermediario() {
           views: Math.floor(Math.random() * 100)
         }));
         setMeusProdutosAtivos(produtosFormatados);
-        console.log(`${produtosFormatados.length} meus produtos ativos`);
       }
     } catch (error) {
-      console.error("Erro ao buscar meus produtos:", error);
+      console.error("Erro ao processar meus produtos:", error);
     }
   };
 
-  // Buscar aprovações pendentes (solicitações que o intermediário já fez)
   const fetchAprovacoesPendentes = async () => {
     try {
       const token = getToken();
       if (!token) return;
 
-      console.log("Buscando aprovações pendentes...");
+      const data = await intermediarioAPI.getAprovacoesPendentes(token);
 
-      const response = await fetch(`${API_BASE_URL}/intermediario/aprovacoes-pendentes`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      console.log("Resposta status:", response.status);
-
-      if (!response.ok) {
-        console.error("Erro na resposta:", response.status);
-        return;
-      }
-
-      const data = await response.json();
-      console.log("Dados recebidos (aprovacoes):", data);
-      console.log("Quantidade:", data.length);
+      if (data.error) return;
 
       if (Array.isArray(data)) {
         const aprovacoesFormatadas = data.map(item => ({
@@ -319,13 +237,11 @@ export default function DashboardIntermediario() {
           date: item.data_solicitacao || new Date().toLocaleDateString('pt-MZ')
         }));
         setAprovacoes(aprovacoesFormatadas);
-        console.log(`${aprovacoesFormatadas.length} solicitações pendentes carregadas`);
       } else {
-        console.error("Dados não são array:", data);
         setAprovacoes([]);
       }
     } catch (error) {
-      console.error("❌ Erro ao buscar aprovações pendentes:", error);
+      console.error("Erro ao processar aprovações pendentes:", error);
       setAprovacoes([]);
     }
   };
@@ -336,29 +252,19 @@ export default function DashboardIntermediario() {
       const token = getToken();
       if (!token) {
         alert("Token não encontrado. Faça login novamente.");
-        navigate('/auth');
+        executarLogout();
         return;
       }
 
-      console.log(`Solicitando produto ${produtoId}...`);
+      const result = await intermediarioAPI.solicitarIntermediacao(token, produtoId);
 
-      const response = await fetch(`${API_BASE_URL}/intermediario/solicitar/${produtoId}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
+      if (!result.error) {
         alert("Solicitação enviada com sucesso!");
         await loadAllData();
       } else {
-        const data = await response.json();
-        alert(`Erro ${response.status}: ${data.message || 'Erro ao solicitar'}`);
+        alert(`Erro: ${result.message || 'Erro ao solicitar'}`);
       }
     } catch (error) {
-      console.error("Erro detalhado:", error);
       alert("Erro ao conectar ao servidor: " + error.message);
     } finally {
       setSolicitandoId(null);
@@ -371,36 +277,25 @@ export default function DashboardIntermediario() {
       const token = getToken();
       if (!token) {
         alert("Token não encontrado. Faça login novamente.");
-        navigate('/auth');
+        executarLogout();
         return;
       }
 
-      console.log(`Cancelando solicitação ${solicitacaoId}...`);
+      const result = await intermediarioAPI.cancelarSolicitacao(token, solicitacaoId);
 
-      const response = await fetch(`${API_BASE_URL}/intermediario/solicitacao/${solicitacaoId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
+      if (!result.error) {
         alert("Solicitação cancelada com sucesso!");
         await loadAllData();
       } else {
-        const data = await response.json();
-        alert(`Erro ${response.status}: ${data.message || 'Erro ao cancelar solicitação'}`);
+        alert(`Erro: ${result.message || 'Erro ao cancelar solicitação'}`);
       }
     } catch (error) {
-      console.error("Erro detalhado:", error);
       alert("Erro ao conectar ao servidor: " + error.message);
     } finally {
       setCancelandoId(null);
     }
   };
 
-  // Carregar todos os dados
   const loadAllData = async () => {
     setLoading(true);
     await Promise.all([
@@ -412,18 +307,16 @@ export default function DashboardIntermediario() {
     setLoading(false);
   };
 
-  // Efeito inicial - com verificação de tipo de usuário
   useEffect(() => {
     if (!verificarTipoUsuario()) return;
     fetchPerfil();
     loadAllData();
   }, []);
 
-  // Verificar token
   useEffect(() => {
     const token = getToken();
     if (!token) {
-      navigate('/auth');
+      executarLogout();
     }
   }, []);
 
@@ -511,12 +404,9 @@ export default function DashboardIntermediario() {
                         }}>
                           Editar Perfil
                         </button>
+                        {/* 2. BOTÃO ALTERADO PARA CHAMAR A FUNÇÃO DE LOGOUT CENTRALIZADA */}
                         <button
-                          onClick={() => {
-                            localStorage.removeItem('accessToken');
-                            localStorage.removeItem('blink_user');
-                            navigate('/auth');
-                          }}
+                          onClick={executarLogout}
                           style={{
                             flex: 1, padding: '8px', border: 'none',
                             borderRadius: '8px', background: '#ef4444',

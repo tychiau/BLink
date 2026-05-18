@@ -2,11 +2,12 @@
 
 const API_BASE_URL = 'https://blink-oz62.onrender.com';
 // const API_BASE_URL = 'http://localhost:3000';
+
 export const handleLogout = () => {
     localStorage.removeItem('blink_user');
     localStorage.removeItem('accessToken');
     window.location.href = '/auth';
-}
+};
 
 export const loginGoogleAPI = async (googleData) => {
     try {
@@ -116,11 +117,6 @@ export const productsAPI = {
 
     createProduct: async (token, productData) => {
         try {
-            console.log("=== API createProduct ===");
-            console.log("URL:", `${API_BASE_URL}/api/produtos`);
-            console.log("Dados recebidos:", JSON.stringify(productData, null, 2));
-            console.log("provincia no productData:", productData.provincia);
-
             const response = await fetch(`${API_BASE_URL}/api/produtos`, {
                 method: 'POST',
                 headers: {
@@ -131,8 +127,6 @@ export const productsAPI = {
             });
 
             const data = await response.json();
-            console.log("Resposta da API:", data);
-            console.log("Status da resposta:", response.status);
 
             if (!response.ok) {
                 return { error: true, message: data.message || 'Erro ao criar produto' };
@@ -147,8 +141,6 @@ export const productsAPI = {
 
     updateProduct: async (token, productId, productData) => {
         try {
-            console.log('Atualizando produto:', productId, productData);
-
             const response = await fetch(`${API_BASE_URL}/api/produto/${productId}`, {
                 method: 'PUT',
                 headers: {
@@ -238,9 +230,7 @@ export const productsAPI = {
     }
 };
 
-// Adicione esta exportação para o intermediário
 export const intermediarioAPI = {
-    // Buscar oportunidades de venda
     getOportunidades: async (token) => {
         try {
             const response = await fetch(`${API_BASE_URL}/api/intermediario/oportunidades`, {
@@ -250,6 +240,10 @@ export const intermediarioAPI = {
                     'Content-Type': 'application/json'
                 }
             });
+
+            if (!response.ok) {
+                return { error: true, status: response.status };
+            }
             return await response.json();
         } catch (error) {
             console.error('Erro ao buscar oportunidades:', error);
@@ -257,7 +251,6 @@ export const intermediarioAPI = {
         }
     },
 
-    // Buscar meus produtos ativos
     getMeusProdutosAtivos: async (token) => {
         try {
             const response = await fetch(`${API_BASE_URL}/api/intermediario/produtos-ativos`, {
@@ -267,6 +260,10 @@ export const intermediarioAPI = {
                     'Content-Type': 'application/json'
                 }
             });
+
+            if (!response.ok) {
+                return { error: true, status: response.status };
+            }
             return await response.json();
         } catch (error) {
             console.error('Erro ao buscar meus produtos:', error);
@@ -274,7 +271,6 @@ export const intermediarioAPI = {
         }
     },
 
-    // Buscar estatísticas
     getStats: async (token) => {
         try {
             const response = await fetch(`${API_BASE_URL}/api/intermediario/stats`, {
@@ -284,6 +280,10 @@ export const intermediarioAPI = {
                     'Content-Type': 'application/json'
                 }
             });
+
+            if (!response.ok) {
+                return { error: true, status: response.status };
+            }
             return await response.json();
         } catch (error) {
             console.error('Erro ao buscar estatísticas:', error);
@@ -291,7 +291,6 @@ export const intermediarioAPI = {
         }
     },
 
-    // Solicitar intermediação
     solicitarIntermediacao: async (token, produtoId) => {
         try {
             const response = await fetch(`${API_BASE_URL}/api/intermediario/solicitar/${produtoId}`, {
@@ -301,14 +300,18 @@ export const intermediarioAPI = {
                     'Content-Type': 'application/json'
                 }
             });
-            return await response.json();
+
+            const data = await response.json();
+            if (!response.ok) {
+                return { error: true, status: response.status, message: data.message };
+            }
+            return data;
         } catch (error) {
             console.error('Erro ao solicitar intermediação:', error);
             return { error: true, message: 'Erro ao conectar ao servidor' };
         }
     },
 
-    // Cancelar solicitação
     cancelarSolicitacao: async (token, solicitacaoId) => {
         try {
             const response = await fetch(`${API_BASE_URL}/api/intermediario/solicitacao/${solicitacaoId}`, {
@@ -318,14 +321,18 @@ export const intermediarioAPI = {
                     'Content-Type': 'application/json'
                 }
             });
-            return await response.json();
+
+            const data = await response.json();
+            if (!response.ok) {
+                return { error: true, status: response.status, message: data.message };
+            }
+            return data;
         } catch (error) {
             console.error('Erro ao cancelar solicitação:', error);
             return { error: true, message: 'Erro ao conectar ao servidor' };
         }
     },
 
-    // Buscar aprovações pendentes
     getAprovacoesPendentes: async (token) => {
         try {
             const response = await fetch(`${API_BASE_URL}/api/intermediario/aprovacoes-pendentes`, {
@@ -335,6 +342,10 @@ export const intermediarioAPI = {
                     'Content-Type': 'application/json'
                 }
             });
+
+            if (!response.ok) {
+                return { error: true, status: response.status };
+            }
             return await response.json();
         } catch (error) {
             console.error('Erro ao buscar aprovações pendentes:', error);
@@ -380,7 +391,6 @@ export const intermediariosAPI = {
 };
 
 export const vendedorAPI = {
-    // Buscar solicitações recebidas
     getSolicitacoesRecebidas: async (token) => {
         try {
             const response = await fetch(`${API_BASE_URL}/api/intermediario/vendedor/solicitacoes`, {
@@ -397,7 +407,6 @@ export const vendedorAPI = {
         }
     },
 
-    // Aceitar solicitação
     aceitarSolicitacao: async (token, solicitacaoId) => {
         try {
             const response = await fetch(`${API_BASE_URL}/api/intermediario/vendedor/solicitacoes/${solicitacaoId}/aceitar`, {
@@ -414,7 +423,6 @@ export const vendedorAPI = {
         }
     },
 
-    // Rejeitar solicitação
     rejeitarSolicitacao: async (token, solicitacaoId) => {
         try {
             const response = await fetch(`${API_BASE_URL}/api/intermediario/vendedor/solicitacoes/${solicitacaoId}/rejeitar`, {
@@ -433,7 +441,6 @@ export const vendedorAPI = {
 };
 
 export const clienteAPI = {
-    // Buscar produtos intermediados disponíveis
     getProdutosIntermediados: async (token) => {
         try {
             const response = await fetch(`${API_BASE_URL}/api/requests/colunasProdutosIntermediado`, {
@@ -451,4 +458,16 @@ export const clienteAPI = {
     }
 };
 
-export default { handleLogout, loginAPI, registerAPI, productsAPI, usuariosAPI, intermediariosAPI, intermediarioAPI, vendedorAPI, clienteAPI };
+const apiService = {
+    handleLogout,
+    loginAPI,
+    registerAPI,
+    productsAPI,
+    usuariosAPI,
+    intermediariosAPI,
+    intermediarioAPI,
+    vendedorAPI,
+    clienteAPI
+};
+
+export default apiService;

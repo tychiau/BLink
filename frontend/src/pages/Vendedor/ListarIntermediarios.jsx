@@ -1,8 +1,6 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-
-const API_BASE_URL = 'https://blink-oz62.onrender.com';
+import api from "../../api";
 
 export default function ListarIntermediarios() {
   const [intermediarios, setIntermediarios] = useState([]);
@@ -10,44 +8,34 @@ export default function ListarIntermediarios() {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const getToken = () => localStorage.getItem("accessToken");
-
   const fetchIntermediarios = async () => {
     try {
       setLoading(true);
-      const token = getToken();
+      setError(null);
 
-      if (!token) {
-        console.error("Token não encontrado");
-        navigate('/auth');
-        return;
-      }
+      // 1. Recupera o token guardado no localStorage
+      const token = localStorage.getItem("accessToken");
 
-      const response = await fetch(`${API_BASE_URL}/api/intermediario/listar`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      // 2. Chamada adaptada para a estrutura actual do seu ficheiro api.js
+      const data = await api.intermediariosAPI.listarIntermediarios(token);
+
+      // 3. Verifica se o serviço retornou a estrutura de erro tratada no fetch
+      if (data && data.error) {
+        setError(data.message || "Erro ao buscar intermediários");
+
+        // Salvaguarda de redireccionamento em caso de erro de autenticação
+        if (data.status === 401 || data.status === 403) {
+          navigate("/auth");
         }
-      });
-
-      if (response.status === 401 || response.status === 403) {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('blink_user');
-        navigate('/auth');
         return;
       }
 
-      if (!response.ok) {
-        throw new Error("Erro ao buscar intermediários");
-      }
-
-      const data = await response.json();
       console.log("Intermediários recebidos:", data);
-      setIntermediarios(data);
+      // Garante que o estado recebe um array válido
+      setIntermediarios(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error("Erro:", err);
-      setError(err.message);
+      console.error("Erro ao buscar intermediários:", err);
+      setError("Erro ao conectar ao servidor. Verifique a sua ligação.");
     } finally {
       setLoading(false);
     }
@@ -62,9 +50,9 @@ export default function ListarIntermediarios() {
   };
 
   const handleWhatsApp = (telefone, nome) => {
-    const numero = telefone?.replace(/\D/g, '') || '';
+    const numero = telefone?.replace(/\D/g, "") || "";
     const mensagem = `Olá ${nome}, vi seu perfil no BLINK e gostaria de negociar.`;
-    window.open(`https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`, '_blank');
+    window.open(`https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`, "_blank");
   };
 
   const renderStars = (avaliacao) => {
@@ -138,7 +126,7 @@ export default function ListarIntermediarios() {
         </p>
       </div>
 
-      {/* Filtros (opcional) */}
+      {/* Filtros */}
       <div style={{
         display: "flex",
         gap: 16,
@@ -150,7 +138,7 @@ export default function ListarIntermediarios() {
         border: "1px solid #e2e8f0"
       }}>
         <div>
-          <label style={{ fontSize: 12, fontWeight: 600, color: "#64748b", display: "block", marginBottom: 4 }}>
+          <label style={{ fontSize: 12, fontWeight: 600, color: "#64748b", display: "block", JSONBottom: 4 }}>
             Ordenar por
           </label>
           <select style={{ padding: "6px 12px", borderRadius: 6, border: "1px solid #cbd5e1", background: "#fff" }}>
@@ -207,6 +195,7 @@ export default function ListarIntermediarios() {
           {intermediarios.map((inter) => (
             <div
               key={inter.id}
+              onClick={() => handleVerPerfil(inter.id)}
               style={{
                 background: "#fff",
                 borderRadius: 16,
@@ -305,7 +294,10 @@ export default function ListarIntermediarios() {
                 {/* Botões */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 10, minWidth: 160 }}>
                   <button
-                    onClick={() => handleWhatsApp(inter.telefone, inter.nome)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleWhatsApp(inter.telefone, inter.nome);
+                    }}
                     style={{
                       padding: "10px 16px",
                       background: "#25D366",
@@ -327,7 +319,10 @@ export default function ListarIntermediarios() {
                     Negociar via WhatsApp
                   </button>
                   <button
-                    onClick={() => handleVerPerfil(inter.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleVerPerfil(inter.id);
+                    }}
                     style={{
                       padding: "10px 16px",
                       background: "#1e3a5f",
