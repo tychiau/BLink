@@ -1,6 +1,6 @@
 // frontend/src/components/PerfilIntermediario.jsx
 import React, { useState, useEffect } from 'react';
-import { intermediarioAPI } from '../../api';
+import { intermediarioAPI } from '../../api';  // ← Corrigido
 import './PerfilIntermediario.css';
 
 const PerfilIntermediario = ({ perfilData, onClose, onLogout, onPerfilAtualizado }) => {

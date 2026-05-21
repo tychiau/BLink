@@ -1,7 +1,12 @@
+// frontend/src/pages/Intermediario/DashboardIntermediario.jsx
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from 'react-router-dom';
 import { intermediarioAPI, handleLogout } from "../../api";
 import PerfilIntermediario from "./PerfilIntermediario";
+import MeusProdutos from "./MeusProdutos";
+import Vendas from "./Vendas";
+import Ganhos from "./Ganhos";
+import Chat from "./Chat";
 import "./DashboardIntermediario.css";
 
 // ============================================
@@ -17,14 +22,6 @@ const IconDashboard = () => (
   </svg>
 );
 
-const IconProdutos = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1e3a5f" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" />
-    <line x1="12" y1="8" x2="12" y2="16" />
-    <line x1="8" y1="12" x2="16" y2="12" />
-  </svg>
-);
-
 const IconMeusProdutos = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1e3a5f" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M20 7h-4.18A3 3 0 0 0 16 5.18V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v1.18A3 3 0 0 0 8.18 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2Z" />
@@ -34,21 +31,36 @@ const IconMeusProdutos = () => (
 
 const IconGanhos = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1e3a5f" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="12" y1="1" x2="12" y2="23" />
-    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+    <path d="M12 2v4" />
+    <path d="M12 18v4" />
+    <path d="M4.93 4.93l2.83 2.83" />
+    <path d="M16.24 16.24l2.83 2.83" />
+    <path d="M2 12h4" />
+    <path d="M18 12h4" />
+    <path d="M4.93 19.07l2.83-2.83" />
+    <path d="M16.24 7.76l2.83-2.83" />
+    <circle cx="12" cy="12" r="3" />
   </svg>
 );
 
 const IconVendas = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1e3a5f" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="12" y1="1" x2="12" y2="23" />
-    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+    <polyline points="22 4 12 14.01 9 11.01" />
   </svg>
 );
 
 const IconChat = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1e3a5f" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+  </svg>
+);
+
+const IconSair = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+    <polyline points="16 17 21 12 16 7" />
+    <line x1="21" y1="12" x2="9" y2="12" />
   </svg>
 );
 
@@ -127,7 +139,6 @@ const IconTaxaConversao = () => (
 
 const menuItemsConfig = [
   { label: "Dashboard", icon: <IconDashboard />, page: "dashboard" },
-  { label: "Novos Produtos", icon: <IconProdutos />, page: "novos_produtos" },
   { label: "Meus Produtos", icon: <IconMeusProdutos />, page: "meus_produtos" },
   { label: "Vendas", icon: <IconVendas />, page: "vendas" },
   { label: "Ganhos", icon: <IconGanhos />, page: "ganhos" },
@@ -166,6 +177,7 @@ export default function DashboardIntermediario() {
   const [perfil, setPerfil] = useState(null);
   const [notification, setNotification] = useState({ show: false, message: "", type: "" });
   const [errorMessage, setErrorMessage] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
   
   const loadingRef = useRef(false);
 
@@ -211,7 +223,6 @@ export default function DashboardIntermediario() {
           status: response.data.status
         });
       } else {
-        // Fallback para dados do localStorage
         const usuarioData = localStorage.getItem("blink_user");
         if (usuarioData) {
           const usuario = JSON.parse(usuarioData);
@@ -228,7 +239,6 @@ export default function DashboardIntermediario() {
       }
     } catch (err) {
       console.error('Erro ao buscar perfil:', err);
-      // Fallback
       const usuarioData = localStorage.getItem("blink_user");
       if (usuarioData) {
         const usuario = JSON.parse(usuarioData);
@@ -245,7 +255,6 @@ export default function DashboardIntermediario() {
     }
   }, []);
 
-  // Buscar oportunidades (produtos disponíveis)
   const fetchProdutos = useCallback(async () => {
     try {
       const token = getToken();
@@ -277,7 +286,15 @@ export default function DashboardIntermediario() {
               status_solicitacao: produto.status_solicitacao
             };
           });
-          setProdutos(produtosFormatados);
+          
+          const filtered = searchTerm 
+            ? produtosFormatados.filter(p => 
+                p.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                p.vendedor_nome?.toLowerCase().includes(searchTerm.toLowerCase())
+              )
+            : produtosFormatados;
+          
+          setProdutos(filtered);
           setErrorMessage(null);
         } else {
           setProdutos([]);
@@ -294,9 +311,8 @@ export default function DashboardIntermediario() {
       setProdutos([]);
       setErrorMessage("Erro ao carregar produtos. Verifique sua conexão.");
     }
-  }, []);
+  }, [searchTerm]);
 
-  // Buscar estatísticas
   const fetchStats = useCallback(async () => {
     try {
       const token = getToken();
@@ -317,7 +333,6 @@ export default function DashboardIntermediario() {
     }
   }, []);
 
-  // Buscar meus produtos ativos
   const fetchMeusProdutos = useCallback(async () => {
     try {
       const token = getToken();
@@ -339,6 +354,8 @@ export default function DashboardIntermediario() {
               comissao_intermediario: comissaoPercentual,
               comissao_valor: comissaoValor,
               foto_url: produto.foto_url,
+              vendedor_nome: produto.vendedor_nome,
+              data_vinculo: produto.data_vinculo
             };
           });
           setMeusProdutos(produtosFormatados);
@@ -354,7 +371,6 @@ export default function DashboardIntermediario() {
     }
   }, []);
 
-  // Buscar aprovações pendentes (solicitações)
   const fetchSolicitacoes = useCallback(async () => {
     try {
       const token = getToken();
@@ -466,10 +482,8 @@ export default function DashboardIntermediario() {
   };
 
   const handlePerfilAtualizado = (dadosAtualizados) => {
-    // Atualizar os dados do perfil no dashboard
     setPerfil(prev => ({ ...prev, ...dadosAtualizados }));
     
-    // Atualizar também no localStorage
     const usuarioData = localStorage.getItem("blink_user");
     if (usuarioData) {
       const usuario = JSON.parse(usuarioData);
@@ -480,6 +494,10 @@ export default function DashboardIntermediario() {
     }
   };
 
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
   // ============================================
   // EFECTOS
   // ============================================
@@ -488,6 +506,10 @@ export default function DashboardIntermediario() {
     fetchPerfil();
     loadAllData();
   }, [fetchPerfil]);
+
+  useEffect(() => {
+    fetchProdutos();
+  }, [searchTerm]);
 
   // ============================================
   // RENDER
@@ -511,7 +533,7 @@ export default function DashboardIntermediario() {
         </div>
       )}
 
-      {/* MODAL DE PERFIL - USANDO O COMPONENTE PERFILINTERMEDIARIO */}
+      {/* MODAL DE PERFIL */}
       {showPerfilModal && perfil && (
         <div className="di-modal-fullscreen-overlay">
           <div className="di-modal-fullscreen">
@@ -534,13 +556,15 @@ export default function DashboardIntermediario() {
             className="di-search"
             type="text"
             placeholder="Pesquisar produtos..."
+            value={searchTerm}
+            onChange={handleSearchChange}
           />
         </div>
         <div className="di-nav-icons">
           <button className="di-icon-btn">
             <IconNotificacao />
           </button>
-          <button className="di-icon-btn">
+          <button className="di-icon-btn" onClick={() => setActivePage("chat")}>
             <IconChat />
           </button>
           <div className="di-avatar" onClick={() => setShowPerfilModal(true)}>
@@ -565,17 +589,22 @@ export default function DashboardIntermediario() {
               </button>
             ))}
           </nav>
+          
+          {/* PERFIL DO USUÁRIO - MOVIDO PARA CIMA DO BOTÃO SAIR */}
           <div className="di-sidebar-profile">
-            <div className="di-profile-avatar">
+            <div className="di-profile-avatar" onClick={() => setShowPerfilModal(true)}>
               {perfil ? getInicial(perfil.nome) : "I"}
             </div>
-            <div className="di-profile-info">
+            <div className="di-profile-info" onClick={() => setShowPerfilModal(true)}>
               <p className="di-profile-name">{perfil?.nome || "Intermediário"}</p>
               <p className="di-profile-role">{getPapelUsuario()}</p>
             </div>
           </div>
+          
+          {/* BOTÃO SAIR */}
           <button onClick={executarLogout} className="di-btn-sair">
-            Sair
+            <IconSair />
+            <span>Sair</span>
           </button>
         </aside>
 
@@ -597,20 +626,7 @@ export default function DashboardIntermediario() {
                   <button
                     onClick={handleRefresh}
                     disabled={refreshing}
-                    style={{
-                      padding: "6px 14px",
-                      background: "#1e3a5f",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: 6,
-                      cursor: refreshing ? "not-allowed" : "pointer",
-                      opacity: refreshing ? 0.6 : 1,
-                      fontSize: 12,
-                      fontWeight: 500,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
+                    className="di-refresh-btn"
                   >
                     <IconRecarregar />
                     {refreshing ? "A recarregar..." : "Recarregar"}
@@ -620,18 +636,9 @@ export default function DashboardIntermediario() {
 
               {/* MENSAGEM DE ERRO */}
               {errorMessage && (
-                <div style={{ 
-                  background: "#fcebeb", 
-                  color: "#791f1f", 
-                  padding: "10px 14px", 
-                  marginBottom: 20, 
-                  borderRadius: 8,
-                  border: "0.5px solid #f7c1c1"
-                }}>
+                <div className="di-error-message">
                   {errorMessage}
-                  <button onClick={handleRefresh} style={{ marginLeft: 10, padding: "4px 8px", cursor: "pointer" }}>
-                    Tentar novamente
-                  </button>
+                  <button onClick={handleRefresh}>Tentar novamente</button>
                 </div>
               )}
 
@@ -653,7 +660,7 @@ export default function DashboardIntermediario() {
               {/* PRODUTOS DISPONÍVEIS */}
               <div className="di-section-header">
                 <h2 className="di-section-title">Produtos Disponíveis</h2>
-                <button className="di-ver-todos" onClick={() => setActivePage("novos_produtos")}>
+                <button className="di-ver-todos" onClick={() => setActivePage("meus_produtos")}>
                   Ver todos ({produtos.length})
                 </button>
               </div>
@@ -699,7 +706,7 @@ export default function DashboardIntermediario() {
               </div>
 
               {produtos.length === 0 && !loading && (
-                <div className="di-empty-state" style={{ gridColumn: "1 / -1", padding: "40px" }}>
+                <div className="di-empty-state">
                   <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#718096" strokeWidth="1.5">
                     <path d="M20 7h-4.18A3 3 0 0 0 16 5.18V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v1.18A3 3 0 0 0 8.18 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2Z" />
                   </svg>
@@ -721,14 +728,13 @@ export default function DashboardIntermediario() {
                     )}
                   </div>
                   {solicitacoes.length === 0 ? (
-                    <div className="di-empty-state">
-                      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#718096" strokeWidth="1.5">
+                    <div className="di-empty-state-small">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#718096" strokeWidth="1.5">
                         <circle cx="12" cy="12" r="10" />
                         <line x1="12" y1="8" x2="12" y2="12" />
                         <line x1="12" y1="16" x2="12.01" y2="16" />
                       </svg>
                       <p>Sem solicitações pendentes</p>
-                      <small>Suas solicitações aparecerão aqui aguardando aprovação.</small>
                     </div>
                   ) : (
                     solicitacoes.map((solic) => (
@@ -769,13 +775,12 @@ export default function DashboardIntermediario() {
                     )}
                   </div>
                   {meusProdutos.length === 0 ? (
-                    <div className="di-empty-state">
-                      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#718096" strokeWidth="1.5">
+                    <div className="di-empty-state-small">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#718096" strokeWidth="1.5">
                         <path d="M20 7h-4.18A3 3 0 0 0 16 5.18V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v1.18A3 3 0 0 0 8.18 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z" />
                         <circle cx="12" cy="13" r="3" />
                       </svg>
                       <p>Nenhum produto ativo</p>
-                      <small>Aguardando aprovação dos vendedores.</small>
                     </div>
                   ) : (
                     meusProdutos.slice(0, 3).map((produto, index) => (
@@ -790,15 +795,8 @@ export default function DashboardIntermediario() {
                           <div className="di-produto-ativo-meta">
                             Preço: MZN {produto.preco_minimo.toLocaleString()} • Comissão: {produto.comissao_intermediario}%
                           </div>
-                          <div className="di-produto-ativo-meta" style={{ color: "#10b981", fontWeight: 600, marginTop: 4 }}>
+                          <div className="di-produto-ativo-ganho">
                             Seu ganho: MZN {produto.comissao_valor.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </div>
-                          <div className="di-produto-ativo-views">
-                            Visualizações: {Math.floor(Math.random() * 100)}
-                          </div>
-                          <div className="di-produto-ativo-acoes">
-                            <button className="di-btn-link">Link de Venda</button>
-                            <button className="di-btn-whatsapp">WhatsApp</button>
                           </div>
                         </div>
                       </div>
@@ -809,17 +807,41 @@ export default function DashboardIntermediario() {
             </>
           )}
 
-          {/* OUTRAS PÁGINAS (placeholder) */}
-          {activePage !== "dashboard" && (
-            <div className="di-empty-state" style={{ padding: "60px" }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Em desenvolvimento</h2>
-              <p style={{ color: "#718096" }}>Esta página será implementada em breve.</p>
-            </div>
+          {/* MEUS PRODUTOS PAGE */}
+          {activePage === "meus_produtos" && (
+            <MeusProdutos 
+              token={getToken()} 
+              onShowNotification={showNotification}
+            />
+          )}
+
+          {/* VENDAS PAGE */}
+          {activePage === "vendas" && (
+            <Vendas 
+              token={getToken()} 
+              onShowNotification={showNotification}
+            />
+          )}
+
+          {/* GANHOS PAGE */}
+          {activePage === "ganhos" && (
+            <Ganhos 
+              token={getToken()} 
+              onShowNotification={showNotification}
+            />
+          )}
+
+          {/* CHAT PAGE */}
+          {activePage === "chat" && (
+            <Chat 
+              token={getToken()} 
+              perfil={perfil}
+              onShowNotification={showNotification}
+            />
           )}
         </main>
       </div>
 
-      {/* Estilos inline */}
       <style>{`
         .spinner {
           width: 40px;
@@ -856,7 +878,6 @@ export default function DashboardIntermediario() {
           to { transform: translateX(0); opacity: 1; }
         }
         
-        /* Modal fullscreen para o perfil */
         .di-modal-fullscreen-overlay {
           position: fixed;
           top: 0;
@@ -871,6 +892,152 @@ export default function DashboardIntermediario() {
         .di-modal-fullscreen {
           min-height: 100vh;
           background: #f7f8fa;
+        }
+        
+        .di-refresh-btn {
+          padding: 6px 14px;
+          background: #1e3a5f;
+          color: #fff;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 12px;
+          font-weight: 500;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        
+        .di-refresh-btn:hover:not(:disabled) {
+          background: #2d4a6e;
+        }
+        
+        .di-error-message {
+          background: #fcebeb;
+          color: #791f1f;
+          padding: 10px 14px;
+          margin-bottom: 20px;
+          border-radius: 8px;
+          border: 0.5px solid #f7c1c1;
+        }
+        
+        .di-error-message button {
+          margin-left: 10px;
+          padding: 4px 8px;
+          cursor: pointer;
+        }
+        
+        .di-empty-state-small {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 30px 20px;
+          color: #94a3b8;
+          text-align: center;
+        }
+        
+        .di-empty-state-small p {
+          margin-top: 8px;
+          font-size: 13px;
+        }
+        
+        .di-produto-ativo-ganho {
+          font-size: 12px;
+          color: #10b981;
+          font-weight: 600;
+          margin-top: 6px;
+        }
+        
+        .di-btn-sair {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: calc(100% - 20px);  /* Adicione esta linha - reduz a largura em 20px */
+            margin: 12px 10px;          /* Modifique esta linha - adicione margens laterais */
+            padding: 8px 12px;          /* Reduza o padding - estava 10px 16px */
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
+                  
+        .di-btn-sair:hover {
+          background: #dc2626;
+          transform: translateY(-1px);
+        }
+        
+        /* Sidebar Profile - agora acima do botão sair */
+        .di-sidebar {
+          width: 280px;
+          background: #ffffff;
+          border-right: 1px solid #e2e8f0;
+          display: flex;
+          flex-direction: column;
+          overflow-y: auto;
+          overflow-x: hidden;
+        }
+        
+        .di-sidebar-profile {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 16px;
+          margin-top: auto;
+          border-top: 1px solid #e2e8f0;
+          border-bottom: 1px solid #e2e8f0;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+        
+        .di-sidebar-profile:hover {
+          background: #f1f5f9;
+        }
+        
+        .di-profile-avatar {
+          width: 40px;
+          height: 40px;
+          background: #1e3a5f;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-weight: 600;
+          font-size: 16px;
+        }
+        
+        .di-profile-info {
+          flex: 1;
+        }
+        
+        .di-profile-name {
+          font-weight: 600;
+          color: #1e293b;
+          margin-bottom: 2px;
+        }
+        
+        .di-profile-role {
+          font-size: 12px;
+          color: #64748b;
+        }
+        
+        /* Remover scroll lateral */
+        .di-root {
+          overflow-x: hidden;
+        }
+        
+        .di-body {
+          overflow-x: hidden;
+        }
+        
+        .di-main {
+          overflow-x: hidden;
         }
       `}</style>
     </div>
