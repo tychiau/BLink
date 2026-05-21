@@ -6,6 +6,8 @@ import Vendas from "./Vendas";
 import ListarIntermediarios from './ListarIntermediarios';
 import { productsAPI } from "../../api";
 
+
+
 // Ícones profissionais em SVG - Azul #1e3a5f
 const IconDashboard = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1e3a5f" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -330,6 +332,9 @@ export default function DashboardVendedor() {
   const [solicitacoesPendentes, setSolicitacoesPendentes] = useState([]);
   const [solicitacoesCount, setSolicitacoesCount] = useState(0);
 
+  const [intermediarios, setIntermediarios] = useState([]); 
+  const [loadingIntermediarios, setLoadingIntermediarios] = useState(false);
+
   const showNotification = (message, type = "success") => {
     setNotification({ show: true, message, type });
     setTimeout(() => setNotification({ show: false, message: "", type: "" }), 3000);
@@ -643,12 +648,38 @@ export default function DashboardVendedor() {
     }
   }, [usuarioLogado.id]);
 
+  // Carregar intermediários quando a aba for selecionada
+  useEffect(() => {
+    if (activePage === "Intermediarios") {
+      fetchIntermediarios();
+    }
+  }, [activePage]);
+
   const handleRefresh = async () => {
     setRefreshing(true);
     await loadAllData(true);
     setRefreshing(false);
     notifyOtherTabs('DATA_CHANGED', { action: 'refresh' });
     showNotification(`${produtos.length} produtos encontrados!`, "success");
+  };
+
+
+    // Buscar lista de intermediários disponíveis
+  const fetchIntermediarios = async () => {
+    setLoadingIntermediarios(true);
+    try {
+      // Essa rota já existe no seu backend e não precisa de token!
+      const response = await fetch('https://blink-oz62.onrender.com/api/intermediario/listar');
+      
+      if (!response.ok) throw new Error("Erro ao buscar");
+      
+      const data = await response.json();
+      setIntermediarios(data);
+    } catch (error) {
+      console.error("Erro ao buscar intermediários:", error);
+    } finally {
+      setLoadingIntermediarios(false);
+    }
   };
 
   const handleStatusChange = async (produtoId, novoEstado) => {
@@ -1030,8 +1061,47 @@ export default function DashboardVendedor() {
             </div>
           )}
 
-          {activePage === "Intermediarios" && <ListarIntermediarios />}
+                    {activePage === "Intermediarios" && (
+            <div>
+              <div className="dv-section-header" style={{ marginBottom: 20 }}>
+                <div>
+                  <h2 className="dv-section-title">Intermediários Disponíveis</h2>
+                  <p style={{ color: "#64748b", fontSize: 13 }}>Profissionais prontos para vender seus produtos.</p>
+                </div>
+                <button onClick={fetchIntermediarios} disabled={loadingIntermediarios} style={{ padding: "6px 14px", background: "#1e3a5f", color: "#fff", border: "none", borderRadius: 6, cursor: "pointer", fontSize: 12 }}>
+                  {loadingIntermediarios ? "Buscando..." : "⟳ Atualizar"}
+                </button>
+              </div>
 
+              {loadingIntermediarios ? (
+                <p style={{ textAlign: "center", color: "#64748b" }}>Carregando lista...</p>
+              ) : intermediarios.length === 0 ? (
+                <div style={{ textAlign: "center", padding: 40, background: "#f9f9f7", borderRadius: 10 }}>
+                  <p style={{ color: "#718096" }}>Nenhum intermediário cadastrado no sistema ainda.</p>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  {intermediarios.map((inter) => (
+                    <div key={inter.id} style={{ background: "#fff", border: "1px solid #e5eaf0", borderRadius: 12, padding: "20px", display: "flex", alignItems: "center", gap: 16 }}>
+                      <div style={{ width: 56, height: 56, borderRadius: "50%", background: "#e2e8f0", color: "#1e3a5f", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", fontSize: 20 }}>
+                        {inter.nome ? inter.nome.charAt(0).toUpperCase() : "I"}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <h3 style={{ margin: "0 0 4px 0", fontSize: 16, color: "#0f172a" }}>{inter.nome}</h3>
+                        <p style={{ margin: 0, fontSize: 13, color: "#64748b" }}>{inter.email}</p>
+                        <div style={{ display: "flex", gap: 12, marginTop: 8, fontSize: 12, color: "#94a3b8" }}>
+                          <span>⭐ {inter.avaliacao || "N/A"}</span>
+                          <span>📍 Moçambique</span>
+                        </div>
+                      </div>
+                      <span style={{ padding: "6px 12px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: "#eaf3de", color: "#27500a" }}>ATIVO</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          
           {activePage === "Adicionar produto" && (
             <CadastroProduto onProductAdded={handleProductAdded} />
           )}
