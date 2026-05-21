@@ -110,8 +110,21 @@ export const intermediarioAPI = {
         request(`/api/intermediario/solicitacao/${solicitacaoId}`, 'DELETE', token, null, 'Erro ao cancelar solicitação'),
 
     getAprovacoesPendentes: async (token) =>
-        request('/api/intermediario/aprovacoes-pendentes', 'GET', token, null, 'Erro ao buscar aprovações pendentes')
-};
+        request('/api/intermediario/aprovacoes-pendentes', 'GET', token, null, 'Erro ao buscar aprovações pendentes'),
+
+    // ========== MÉTODOS DE PERFIL ==========
+    getPerfil: async (token) =>
+        request('/api/intermediario/perfil', 'GET', token, null, 'Erro ao buscar perfil'),
+
+    updatePerfil: async (token, perfilData) =>
+        request('/api/intermediario/perfil', 'PUT', token, perfilData, 'Erro ao atualizar perfil'),
+
+    updateFotoPerfil: async (token, fotoBase64) =>
+        request('/api/intermediario/perfil/foto', 'PUT', token, { foto_base64: fotoBase64 }, 'Erro ao atualizar foto'),
+
+    alterarSenha: async (token, senhaData) =>
+        request('/api/intermediario/alterar-senha', 'PUT', token, senhaData, 'Erro ao alterar senha'),
+}
 
 export const usuariosAPI = {
     getIntermediarios: async (token) =>

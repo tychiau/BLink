@@ -1,3 +1,5 @@
+// backend/src/models/userModel.js
+
 const db = require('../config/db');
 
 const User = {
@@ -5,7 +7,7 @@ const User = {
    * Buscar todos os utilizadores
    */
   getAll: async () => {
-    const [rows] = await db.execute('SELECT id, nome, email, tipo_usuario, data_criacao FROM usuarios');
+    const [rows] = await db.execute('SELECT id, nome, email, telefone, localizacao, tipo_usuario, status, data_criacao FROM usuarios');
     return rows;
   },
 
@@ -13,7 +15,7 @@ const User = {
    * Buscar utilizador por ID
    */
   getById: async (id) => {
-    const [rows] = await db.execute('SELECT * FROM usuarios WHERE id = ?', [id]);
+    const [rows] = await db.execute('SELECT id, nome, email, telefone, localizacao, tipo_usuario, status, foto_perfil, data_criacao FROM usuarios WHERE id = ?', [id]);
     return rows[0];
   },
 
@@ -29,11 +31,11 @@ const User = {
    * Criar novo utilizador (REGISTO)
    */
   create: async (userData) => {
-    const { nome, email, senha, tipo_usuario } = userData;
+    const { nome, email, senha, tipo_usuario, telefone, localizacao } = userData;
 
     const [result] = await db.execute(
-      'INSERT INTO usuarios (id, nome, email, senha, tipo_usuario, status, data_criacao) VALUES (UUID(), ?, ?, ?, ?, ?, NOW())',
-      [nome, email, senha, tipo_usuario, 'ativo']
+      'INSERT INTO usuarios (id, nome, email, senha, tipo_usuario, telefone, localizacao, status, data_criacao) VALUES (UUID(), ?, ?, ?, ?, ?, ?, "ativo", NOW())',
+      [nome, email, senha, tipo_usuario, telefone || null, localizacao || null]
     );
 
     return result.insertId;
@@ -47,7 +49,6 @@ const User = {
       'UPDATE usuarios SET senha = ? WHERE id = ?',
       [newPasswordHash, userId]
     );
-
     return result.affectedRows > 0;
   },
 
@@ -74,69 +75,82 @@ const User = {
    * Atualizar último login
    */
   updateLastLogin: async (userId) => {
-    // Coluna não existe, apenas placeholder
     return true;
   },
 
   // ============================================
-  // MÉTODOS PARA INTERMEDIÁRIOS (CORRIGIDOS)
+  // MÉTODOS PARA INTERMEDIÁRIOS
   // ============================================
 
   /**
    * Listar todos os intermediários disponíveis (para vendedores)
-   * Usando apenas as colunas que existem na tabela
    */
-  // backend/src/models/userModel.js
-
-// Adicione este método se não existir
-listarIntermediarios: async () => {
+  listarIntermediarios: async () => {
     try {
-        const [intermediarios] = await db.execute(
-            `SELECT 
-                id, 
-                nome, 
-                email, 
-                tipo_usuario,
-                status,
-                data_criacao
-             FROM usuarios 
-             WHERE tipo_usuario = 'intermediario' 
-             AND status = 'ativo'
-             ORDER BY nome ASC`
-        );
-        
-        return intermediarios;
+      const [intermediarios] = await db.execute(
+        `SELECT 
+          id, 
+          nome, 
+          email, 
+          telefone,
+          localizacao,
+          tipo_usuario,
+          status,
+          data_criacao
+        FROM usuarios 
+        WHERE tipo_usuario = 'intermediario' 
+        AND status = 'ativo'
+        ORDER BY nome ASC`
+      );
+      return intermediarios;
     } catch (error) {
-        console.error('Erro ao listar intermediários:', error.message);
-        throw error;
+      console.error('Erro ao listar intermediários:', error.message);
+      throw error;
     }
-},
+  },
 
   /**
-   * Buscar um intermediário por ID
+   * Buscar um intermediário por ID (completo)
    */
-  getIntermediarioById: async (id) => {
+  getIntermediarioCompletoById: async (id) => {
     try {
       const [rows] = await db.execute(
-        `SELECT id, nome, email, tipo_usuario, status, data_criacao
-         FROM usuarios 
-         WHERE id = ? AND tipo_usuario = 'intermediario' AND status = 'ativo'`,
+        `SELECT 
+          id, 
+          nome, 
+          email, 
+          telefone,
+          localizacao,
+          tipo_usuario, 
+          status, 
+          foto_perfil,
+          data_criacao
+        FROM usuarios 
+        WHERE id = ? AND tipo_usuario = 'intermediario' AND status = 'ativo'`,
         [id]
       );
       
       if (rows.length === 0) return null;
       
       const inter = rows[0];
+      let fotoBase64 = null;
+      if (inter.foto_perfil) {
+        const buffer = Buffer.isBuffer(inter.foto_perfil) 
+          ? inter.foto_perfil 
+          : Buffer.from(inter.foto_perfil);
+        fotoBase64 = `data:image/jpeg;base64,${buffer.toString('base64')}`;
+      }
+      
       return {
         id: inter.id,
         nome: inter.nome,
         email: inter.email || '',
+        telefone: inter.telefone || '',
+        localizacao: inter.localizacao || '',
+        foto_perfil: fotoBase64,
         tipo_usuario: inter.tipo_usuario,
         status: inter.status,
-        data_criacao: inter.data_criacao,
-        telefone: 'N/A',
-        avaliacao: 4.5,
-        cidade: 'N/A'
+        data_criacao: inter.data_criacao
       };
     } catch (error) {
       console.error('Erro ao buscar intermediário por ID:', error.message);
@@ -152,18 +166,20 @@ listarIntermediarios: async () => {
       const term = `%${searchTerm}%`;
       const [intermediarios] = await db.execute(
         `SELECT 
-            id, 
-            nome, 
-            email, 
-            tipo_usuario,
-            status,
-            data_criacao
-         FROM usuarios 
-         WHERE tipo_usuario = 'intermediario' 
-         AND status = 'ativo'
-         AND (nome LIKE ? OR email LIKE ?)
-         ORDER BY nome ASC
-         LIMIT 20`,
+          id, 
+          nome, 
+          email, 
+          telefone,
+          localizacao,
+          tipo_usuario,
+          status,
+          data_criacao
+        FROM usuarios 
+        WHERE tipo_usuario = 'intermediario' 
+        AND status = 'ativo'
+        AND (nome LIKE ? OR email LIKE ?)
+        ORDER BY nome ASC
+        LIMIT 20`,
         [term, term]
       );
       
@@ -171,12 +187,11 @@ listarIntermediarios: async () => {
         id: inter.id,
         nome: inter.nome,
         email: inter.email || '',
+        telefone: inter.telefone || '',
+        localizacao: inter.localizacao || '',
         tipo_usuario: inter.tipo_usuario,
         status: inter.status,
-        data_criacao: inter.data_criacao,
-        telefone: 'N/A',
-        avaliacao: 4.5,
-        cidade: 'N/A'
+        data_criacao: inter.data_criacao
       }));
     } catch (error) {
       console.error('Erro ao buscar intermediários:', error.message);
@@ -217,7 +232,49 @@ listarIntermediarios: async () => {
   },
 
   /**
-   * Atualizar perfil do usuário
+   * Atualizar perfil completo do usuário (incluindo telefone e localizacao)
+   */
+  atualizarPerfilCompleto: async (userId, dados) => {
+    try {
+      const { nome, telefone, localizacao } = dados;
+      const updates = [];
+      const values = [];
+      
+      if (nome !== undefined && nome !== null) {
+        updates.push('nome = ?');
+        values.push(nome);
+      }
+      
+      if (telefone !== undefined) {
+        updates.push('telefone = ?');
+        values.push(telefone || null);
+      }
+      
+      if (localizacao !== undefined) {
+        updates.push('localizacao = ?');
+        values.push(localizacao || null);
+      }
+      
+      if (updates.length === 0) {
+        return false;
+      }
+      
+      values.push(userId);
+      
+      const [result] = await db.execute(
+        `UPDATE usuarios SET ${updates.join(', ')} WHERE id = ?`,
+        values
+      );
+      
+      return result.affectedRows > 0;
+    } catch (error) {
+      console.error('Erro ao atualizar perfil completo:', error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Atualizar apenas nome do usuário (simplificado)
    */
   atualizarPerfil: async (userId, dados) => {
     try {
@@ -229,6 +286,22 @@ listarIntermediarios: async () => {
       return result.affectedRows > 0;
     } catch (error) {
       console.error('Erro ao atualizar perfil:', error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Atualizar foto do perfil
+   */
+  atualizarFotoPerfil: async (userId, fotoBuffer) => {
+    try {
+      const [result] = await db.execute(
+        'UPDATE usuarios SET foto_perfil = ? WHERE id = ?',
+        [fotoBuffer, userId]
+      );
+      return result.affectedRows > 0;
+    } catch (error) {
+      console.error('Erro ao atualizar foto perfil:', error.message);
       throw error;
     }
   }

@@ -1,23 +1,35 @@
 // backend/src/routes/intermediarioRoutes.js
-
 const express = require('express');
 const router = express.Router();
 const intermediarioController = require('../controllers/intermediarioController');
-const vendedorController = require('../controllers/vendedorController');
 const { authenticateToken, authorizeRole } = require('../middlewares/authMiddleware');
 
-// ========== DEBUG - ADICIONE AQUI ==========
 console.log("\n=== CARREGANDO INTERMEDIARIO ROUTES ===");
-console.log("vendedorController existe?", !!vendedorController);
-console.log("vendedorController.getSolicitacoesRecebidas existe?", !!vendedorController.getSolicitacoesRecebidas);
-console.log("vendedorController.aceitarSolicitacao existe?", !!vendedorController.aceitarSolicitacao);
-console.log("vendedorController.rejeitarSolicitacao existe?", !!vendedorController.rejeitarSolicitacao);
-console.log("===================================\n");
 
 const auth = [authenticateToken, authorizeRole('intermediario', 'admin')];
-const authVendedor = [authenticateToken, authorizeRole('vendedor', 'admin')];
 
-// Rotas do dashboard do intermediário
+// ============================================
+// ROTA DE TESTE
+// ============================================
+router.get('/teste', (req, res) => {
+    res.json({ 
+        success: true, 
+        message: 'Rotas de intermediário estão funcionando!',
+        endpoints: ['/perfil', '/stats', '/oportunidades', '/listar', '/alterar-senha']
+    });
+});
+
+// ============================================
+// ROTAS DE PERFIL
+// ============================================
+router.get('/perfil', auth, intermediarioController.getPerfil);
+router.put('/perfil', auth, intermediarioController.updatePerfil);
+router.put('/perfil/foto', auth, intermediarioController.updateFotoPerfil);
+router.put('/alterar-senha', auth, intermediarioController.alterarSenha);
+
+// ============================================
+// ROTAS DO DASHBOARD
+// ============================================
 router.get('/stats', auth, intermediarioController.getStats);
 router.get('/oportunidades', auth, intermediarioController.getOportunidades);
 router.get('/novos-produtos', auth, intermediarioController.getNovoProdutos);
@@ -28,14 +40,10 @@ router.get('/historico-ganhos', auth, intermediarioController.getHistoricoGanhos
 router.get('/comissao-mensal', auth, intermediarioController.getComissaoMensal);
 router.post('/solicitar/:produtoId', auth, intermediarioController.solicitarIntermediacao);
 router.delete('/solicitacao/:solicitacaoId', auth, intermediarioController.cancelarSolicitacao);
-router.get('/minhas-solicitacoes/:status', auth, vendedorController.getSolicitacoesPorStatus);
 
-// Rotas do vendedor para gerenciar solicitações
-router.get('/vendedor/solicitacoes', authVendedor, vendedorController.getSolicitacoesRecebidas);
-router.post('/vendedor/solicitacoes/:solicitacaoId/aceitar', authVendedor, vendedorController.aceitarSolicitacao);
-router.post('/vendedor/solicitacoes/:solicitacaoId/rejeitar', authVendedor, vendedorController.rejeitarSolicitacao);
-
-// Rota SEM AUTENTICAÇÃO para listar intermediários (para vendedores)
+// ============================================
+// ROTA PÚBLICA
+// ============================================
 router.get('/listar', intermediarioController.listarIntermediarios);
 
 module.exports = router;

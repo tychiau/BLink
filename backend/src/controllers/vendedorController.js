@@ -70,11 +70,11 @@ exports.getSolicitacoesRecebidas = async (req, res) => {
             };
         });
         
-        console.log(`✅ Retornando ${solicitacoesFormatadas.length} solicitações`);
+        console.log(`Retornando ${solicitacoesFormatadas.length} solicitações`);
         res.json(solicitacoesFormatadas);
         
     } catch (error) {
-        console.error('❌ Erro em getSolicitacoesRecebidas:', error);
+        console.error('Erro em getSolicitacoesRecebidas:', error);
         res.status(500).json({ 
             message: 'Erro ao buscar solicitações',
             error: error.message 

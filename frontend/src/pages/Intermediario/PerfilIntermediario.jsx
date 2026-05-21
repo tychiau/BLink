@@ -1,299 +1,436 @@
-import React, { useState } from 'react';
+// frontend/src/components/PerfilIntermediario.jsx
+import React, { useState, useEffect } from 'react';
+import { intermediarioAPI } from '../../api';
 import './PerfilIntermediario.css';
 
-const PerfilIntermediario = () => {
-  const [fotoPerfil, setFotoPerfil] = useState('https://randomuser.me/api/portraits/men/15.jpg');
-  const [novaEspecialidade, setNovaEspecialidade] = useState('');
-  const [especialidades, setEspecialidades] = useState(['Eletrônicos', 'Smart Home', 'Gadgets', 'Hardware']);
-  const [telefoneWhatsApp, setTelefoneWhatsApp] = useState('258841234567');
-
-  
-  const [stats, setStats] = useState({
-    produtos: 42,
-    taxaResposta: 98,
-    vendas: 850,
-    media: 4.9
+const PerfilIntermediario = ({ perfilData, onClose, onLogout, onPerfilAtualizado }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [toast, setToast] = useState({ show: false, message: '', type: '' });
+  const [perfil, setPerfil] = useState({
+    id: '',
+    nome: '',
+    email: '',
+    telefone: '',
+    localizacao: '',
+    foto_perfil: null,
+    data_criacao: ''
+  });
+  const [editData, setEditData] = useState({
+    nome: '',
+    email: '',
+    telefone: '',
+    localizacao: ''
+  });
+  const [senhaData, setSenhaData] = useState({
+    senha_antiga: '',
+    nova_senha: '',
+    confirmar_senha: ''
   });
 
-  const adicionarEspecialidade = () => {
-    if (novaEspecialidade.trim()) {
-      setEspecialidades([...especialidades, novaEspecialidade]);
-      setNovaEspecialidade('');
+  useEffect(() => {
+    if (perfilData) {
+      setPerfil({
+        id: perfilData.id || '',
+        nome: perfilData.nome || '',
+        email: perfilData.email || '',
+        telefone: perfilData.telefone || '',
+        localizacao: perfilData.localizacao || '',
+        foto_perfil: perfilData.foto_perfil || null,
+        data_criacao: perfilData.criado_em || perfilData.data_criacao || new Date().toISOString()
+      });
+      
+      setEditData({
+        nome: perfilData.nome || '',
+        email: perfilData.email || '',
+        telefone: perfilData.telefone || '',
+        localizacao: perfilData.localizacao || ''
+      });
+    }
+  }, [perfilData]);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: '' }), 3000);
+  };
+
+  const getToken = () => localStorage.getItem('accessToken');
+
+  const formatarData = (data) => {
+    if (!data) return '2026';
+    return new Date(data).toLocaleDateString('pt-MZ', { year: 'numeric', month: 'long' });
+  };
+
+  const handleEditClick = () => {
+    setEditData({
+      nome: perfil.nome,
+      email: perfil.email,
+      telefone: perfil.telefone,
+      localizacao: perfil.localizacao
+    });
+    setIsEditing(true);
+    setIsChangingPassword(false);
+  };
+
+  const handleChangePasswordClick = () => {
+    setSenhaData({
+      senha_antiga: '',
+      nova_senha: '',
+      confirmar_senha: ''
+    });
+    setIsChangingPassword(true);
+    setIsEditing(false);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setIsChangingPassword(false);
+  };
+
+  const handleSavePerfil = async () => {
+    if (!editData.nome || editData.nome.trim() === '') {
+      showToast('O nome é obrigatório', 'error');
+      return;
+    }
+
+    if (!editData.email || editData.email.trim() === '') {
+      showToast('O email é obrigatório', 'error');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const token = getToken();
+      const response = await intermediarioAPI.updatePerfil(token, {
+        nome: editData.nome.trim(),
+        email: editData.email.trim(),
+        telefone: editData.telefone || '',
+        localizacao: editData.localizacao || ''
+      });
+
+      if (response && !response.error && response.success) {
+        const updatedPerfil = {
+          ...perfil,
+          nome: editData.nome.trim(),
+          email: editData.email.trim(),
+          telefone: editData.telefone || '',
+          localizacao: editData.localizacao || ''
+        };
+        
+        setPerfil(updatedPerfil);
+        setIsEditing(false);
+        showToast('Perfil atualizado com sucesso!', 'success');
+        
+        if (onPerfilAtualizado) {
+          onPerfilAtualizado({
+            nome: editData.nome.trim(),
+            email: editData.email.trim(),
+            telefone: editData.telefone || '',
+            localizacao: editData.localizacao || ''
+          });
+        }
+        
+        const usuarioData = localStorage.getItem('blink_user');
+        if (usuarioData) {
+          const usuario = JSON.parse(usuarioData);
+          usuario.nome = editData.nome.trim();
+          usuario.email = editData.email.trim();
+          usuario.telefone = editData.telefone || '';
+          usuario.localizacao = editData.localizacao || '';
+          localStorage.setItem('blink_user', JSON.stringify(usuario));
+        }
+      } else {
+        showToast(response?.message || 'Erro ao atualizar perfil', 'error');
+      }
+    } catch (error) {
+      console.error('Erro ao salvar perfil:', error);
+      showToast('Erro ao conectar ao servidor', 'error');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const removerEspecialidade = (index) => {
-    setEspecialidades(especialidades.filter((_, i) => i !== index));
+  const handleSaveSenha = async () => {
+    if (!senhaData.senha_antiga) {
+      showToast('Digite sua senha atual', 'error');
+      return;
+    }
+    
+    if (!senhaData.nova_senha || senhaData.nova_senha.length < 6) {
+      showToast('A nova senha deve ter pelo menos 6 caracteres', 'error');
+      return;
+    }
+    
+    if (senhaData.nova_senha !== senhaData.confirmar_senha) {
+      showToast('As senhas não coincidem', 'error');
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      const token = getToken();
+      const response = await intermediarioAPI.alterarSenha(token, {
+        senha_antiga: senhaData.senha_antiga,
+        nova_senha: senhaData.nova_senha,
+        confirmar_senha: senhaData.confirmar_senha
+      });
+
+      if (response && !response.error && response.success) {
+        showToast('Senha alterada com sucesso!', 'success');
+        setIsChangingPassword(false);
+        setSenhaData({
+          senha_antiga: '',
+          nova_senha: '',
+          confirmar_senha: ''
+        });
+      } else {
+        showToast(response?.message || 'Erro ao alterar senha', 'error');
+      }
+    } catch (error) {
+      console.error('Erro ao alterar senha:', error);
+      showToast('Erro ao conectar ao servidor', 'error');
+    } finally {
+      setChangingPassword(false);
+    }
   };
 
-  const trocarFoto = () => {
+  const handleFotoUpload = () => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    input.onchange = (e) => {
+    input.onchange = async (e) => {
       const file = e.target.files[0];
       if (file) {
+        setLoading(true);
         const reader = new FileReader();
-        reader.onload = (ev) => setFotoPerfil(ev.target.result);
+        reader.onload = async (ev) => {
+          const fotoBase64 = ev.target.result;
+          setPerfil({ ...perfil, foto_perfil: fotoBase64 });
+          
+          try {
+            const token = getToken();
+            const response = await intermediarioAPI.updateFotoPerfil(token, fotoBase64);
+            if (response && !response.error && response.success) {
+              showToast('Foto atualizada com sucesso!', 'success');
+            } else {
+              showToast(response?.message || 'Erro ao atualizar foto', 'error');
+            }
+          } catch (error) {
+            console.error('Erro ao atualizar foto:', error);
+            showToast('Erro ao atualizar foto', 'error');
+          } finally {
+            setLoading(false);
+          }
+        };
         reader.readAsDataURL(file);
       }
     };
     input.click();
   };
 
-  const aumentarEstatisticas = () => {
-    setStats({
-      produtos: stats.produtos + 1,
-      taxaResposta: Math.min(100, stats.taxaResposta + 0.5),
-      vendas: stats.vendas + 1,
-      media: parseFloat((stats.media + 0.01).toFixed(1))
-    });
-  };
+  const fotoUrl = perfil.foto_perfil || `https://ui-avatars.com/api/?name=${encodeURIComponent(perfil.nome || 'I')}&background=1e3a5f&color=fff&size=120&bold=true`;
 
-  const voltar = () => {
-    window.history.back();
-  };
-
-  const produtos = [
-    { id: 1, nome: "Fone de Ouvido Hi-Fi Pro", descricao: "Cancelamento de ruído ativo e 40h de bateria.", preco: 12990, imagem: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=150" },
-    { id: 2, nome: "Smartwatch Series X", descricao: "Monitoramento de saúde completo e tela AMOLED.", preco: 8490, imagem: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=150" },
-    { id: 3, nome: "Caixa de Som Bluetooth", descricao: "Som premium e resistência à água IP67.", preco: 4990, imagem: "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=150" }
-  ];
-
-  const avaliacoes = [
-    { id: 1, nome: "Mariana Silva", foto: "https://randomuser.me/api/portraits/women/1.jpg", data: "15 de Abril, 2026", estrelas: 5, comentario: "Ricardo foi super atencioso durante todo o processo. O fone chegou impecável em Maputo e ele tirou todas as minhas dúvidas sobre a garantia. Recomendo muito!" },
-    { id: 2, nome: "Carlos Eduardo", foto: "https://randomuser.me/api/portraits/men/2.jpg", data: "10 de Abril, 2026", estrelas: 4, comentario: "Ótima experiência de compra. Atendimento rápido e eficiente para entregas locais." },
-    { id: 3, nome: "Ana Beatriz", foto: "https://randomuser.me/api/portraits/women/3.jpg", data: "5 de Abril, 2026", estrelas: 5, comentario: "Produto de excelente qualidade. O intermediário respondeu rapidamente e a entrega foi dentro do prazo." }
-  ];
-
-  const renderStars = (rating) => {
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 !== 0;
-    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-    return (
-      <div className="stars-container">
-        {[...Array(fullStars)].map((_, i) => <i key={`full-${i}`} className="fas fa-star"></i>)}
-        {hasHalfStar && <i className="fas fa-star-half-alt"></i>}
-        {[...Array(emptyStars)].map((_, i) => <i key={`empty-${i}`} className="far fa-star"></i>)}
-      </div>
-    );
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
   };
 
   return (
-    <div className="perfil-page">
-      {/* Barra superior com X */}
-      <div className="top-bar">
-        <div className="top-bar-left">
-          <button className="btn-sair" onClick={voltar}>
+    <div className="modal-overlay" onClick={handleOverlayClick}>
+      <div className="modal-container">
+        {toast.show && (
+          <div className={`toast-notification toast-${toast.type}`}>
+            <i className={`fas ${toast.type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}`}></i>
+            <span>{toast.message}</span>
+          </div>
+        )}
+
+        <div className="modal-header">
+          <div className="modal-logo">
+            <span className="logo-text">BLINK</span>
+          </div>
+          <button className="modal-close-btn" onClick={onClose}>
             <i className="fas fa-times"></i>
           </button>
-          <span className="logo">BLINK</span>
-        </div>
-        <div className="top-bar-center">
-          <a href="#">Categorias</a>
-          <a href="#">Como Funciona</a>
-          <a href="#">Seja Intermediário</a>
-        </div>
-        <div className="top-bar-right">
-          <a href="#">Login</a>
-          <a href="#" className="btn-registrar">Registrar</a>
-        </div>
-      </div>
-
-      <div className="perfil-container">
-        {/* Card Principal do Perfil - FOTO ESQUERDA / INFO DIREITA */}
-        <div className="perfil-header-card">
-          <div className="perfil-foto">
-            <img src={fotoPerfil} alt="Perfil" />
-            <button className="btn-trocar-foto" onClick={trocarFoto}>
-              <i className="fas fa-camera"></i>
-            </button>
-          </div>
-          <div className="perfil-info-container">
-            <h2>Ricardo Almeida</h2>
-            <div className="verificado-container">
-              <i className="fas fa-check-circle"></i> VERIFICADO
-            </div>
-            <div className="avaliacao-wrapper">
-              {renderStars(4.9)}
-              <span className="avaliacao-texto">4.9 (128 avaliações)</span>
-            </div>
-            <p className="perfil-local"><i className="fas fa-map-marker-alt"></i> Maputo, Moçambique</p>
-            <p className="perfil-membro"><i className="fas fa-calendar-alt"></i> Membro desde 2026</p>
-          </div>
         </div>
 
-        {/* Cards de Estatísticas */}
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-icon"><i className="fas fa-boxes"></i></div>
-            <div>
-              <span className="stat-valor">{stats.produtos}</span>
-              <small>PRODUTOS</small>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon"><i className="fas fa-clock"></i></div>
-            <div>
-              <span className="stat-valor">{stats.taxaResposta}%</span>
-              <small>TAXA RESPOSTA</small>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon"><i className="fas fa-shopping-cart"></i></div>
-            <div>
-              <span className="stat-valor">{stats.vendas}+</span>
-              <small>VENDAS</small>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon"><i className="fas fa-star"></i></div>
-            <div>
-              <span className="stat-valor">{stats.media}</span>
-              <small>MÉDIA</small>
-            </div>
-          </div>
-        </div>
-
-        {/* Botão para testar crescimento */}
-        <div className="teste-crescimento">
-          <button onClick={aumentarEstatisticas} className="btn-simular-venda">
-            <i className="fas fa-chart-line"></i> Simular Nova Venda
-          </button>
-        </div>
-
-        {/* Layout de 2 colunas */}
-        <div className="two-columns">
-          <div className="left-column">
-            <div className="sobre-card">
-              <h3><i className="fas fa-user-astronaut"></i> Sobre</h3>
-              <p>Especialista em produtos eletrônicos e tecnologia com mais de 5 anos de experiência no mercado de intermediação em Moçambique. Focado em garantir a melhor experiência de compra e suporte pós-venda para meus clientes.</p>
+        <div className="modal-body">
+          <div className="profile-container">
+            <div className="profile-photo-section">
+              <div className="profile-avatar">
+                <img src={fotoUrl} alt={perfil.nome} />
+                <button className="avatar-edit-btn" onClick={handleFotoUpload} disabled={loading}>
+                  <i className="fas fa-camera"></i>
+                </button>
+                {loading && <div className="avatar-loading"><div className="spinner"></div></div>}
+              </div>
             </div>
 
-            <div className="especialidades-card">
-              <h3><i className="fas fa-cogs"></i> ESPECIALIDADES</h3>
-              <div className="tags">
-                {especialidades.map((esp, idx) => (
-                  <span key={idx} className="tag">
-                    {esp}
-                    <button className="remover-especialidade" onClick={() => removerEspecialidade(idx)}>
-                      <i className="fas fa-times"></i>
-                    </button>
-                  </span>
-                ))}
-                <div className="add-especialidade">
-                  <input 
-                    type="text" 
-                    placeholder="Nova especialidade" 
-                    value={novaEspecialidade} 
-                    onChange={(e) => setNovaEspecialidade(e.target.value)} 
+            <h2 className="profile-title">Meu Perfil</h2>
+            <p className="profile-subtitle">Gerencie suas informações pessoais</p>
+
+            {/* FORMULÁRIO DE EDIÇÃO DE PERFIL */}
+            {isEditing && (
+              <div className="profile-form">
+                <div className="form-group">
+                  <label><i className="fas fa-user"></i> Nome Completo</label>
+                  <input
+                    type="text"
+                    value={editData.nome}
+                    onChange={(e) => setEditData({ ...editData, nome: e.target.value })}
+                    placeholder="Seu nome completo"
+                    className="form-input"
                   />
-                  <button onClick={adicionarEspecialidade}>
-                    <i className="fas fa-plus"></i>
+                </div>
+
+                <div className="form-group">
+                  <label><i className="fas fa-envelope"></i> E-mail</label>
+                  <input
+                    type="email"
+                    value={editData.email}
+                    onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+                    placeholder="seu@email.com"
+                    className="form-input"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label><i className="fas fa-phone"></i> Telefone / WhatsApp</label>
+                  <input
+                    type="tel"
+                    value={editData.telefone}
+                    onChange={(e) => setEditData({ ...editData, telefone: e.target.value })}
+                    placeholder="258841234567"
+                    className="form-input"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label><i className="fas fa-map-marker-alt"></i> Localização</label>
+                  <input
+                    type="text"
+                    value={editData.localizacao}
+                    onChange={(e) => setEditData({ ...editData, localizacao: e.target.value })}
+                    placeholder="Maputo, Moçambique"
+                    className="form-input"
+                  />
+                </div>
+
+                <div className="form-actions">
+                  <button className="btn btn-primary" onClick={handleSavePerfil} disabled={saving}>
+                    <i className="fas fa-save"></i>
+                    {saving ? 'Salvando...' : 'Salvar'}
+                  </button>
+                  <button className="btn btn-secondary" onClick={handleCancelEdit}>
+                    Cancelar
                   </button>
                 </div>
               </div>
-            </div>
-          </div>
+            )}
 
-          <div className="right-column">
-            <div className="produtos-card">
-              <h3><i className="fas fa-boxes"></i> Produtos Representados</h3>
-              <p className="subtitulo">Ofertas exclusivas gerenciadas por este perfil</p>
-              <div className="produtos-grid">
-                {produtos.map(prod => (
-                  <div className="produto-card-telefone" key={prod.id}>
-                    <div className="produto-imagem-telefone">
-                      <img src={prod.imagem} alt={prod.nome} />
-                    </div>
-                    <div className="produto-info-telefone">
-                      <h4>{prod.nome}</h4>
-                      <p className="produto-descricao-telefone">{prod.descricao}</p>
-                      <span className="produto-preco-telefone">{prod.preco.toLocaleString()} MZM</span>
-                    </div>
-                  </div>
-                ))}
+            {/* FORMULÁRIO DE ALTERAÇÃO DE SENHA */}
+            {isChangingPassword && (
+              <div className="profile-form">
+                <div className="form-group">
+                  <label><i className="fas fa-lock"></i> Senha Atual</label>
+                  <input
+                    type="password"
+                    value={senhaData.senha_antiga}
+                    onChange={(e) => setSenhaData({ ...senhaData, senha_antiga: e.target.value })}
+                    placeholder="Digite sua senha atual"
+                    className="form-input"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label><i className="fas fa-key"></i> Nova Senha</label>
+                  <input
+                    type="password"
+                    value={senhaData.nova_senha}
+                    onChange={(e) => setSenhaData({ ...senhaData, nova_senha: e.target.value })}
+                    placeholder="Mínimo 6 caracteres"
+                    className="form-input"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label><i className="fas fa-check-circle"></i> Confirmar Nova Senha</label>
+                  <input
+                    type="password"
+                    value={senhaData.confirmar_senha}
+                    onChange={(e) => setSenhaData({ ...senhaData, confirmar_senha: e.target.value })}
+                    placeholder="Digite novamente a nova senha"
+                    className="form-input"
+                  />
+                </div>
+
+                <div className="form-actions">
+                  <button className="btn btn-primary" onClick={handleSaveSenha} disabled={changingPassword}>
+                    <i className="fas fa-save"></i>
+                    {changingPassword ? 'Alterando...' : 'Alterar Senha'}
+                  </button>
+                  <button className="btn btn-secondary" onClick={handleCancelEdit}>
+                    Cancelar
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* VISUALIZAÇÃO DO PERFIL */}
+            {!isEditing && !isChangingPassword && (
+              <>
+                <div className="profile-form">
+                  <div className="form-group">
+                    <label><i className="fas fa-user"></i> Nome Completo</label>
+                    <div className="form-value">{perfil.nome || 'Não informado'}</div>
+                  </div>
+
+                  <div className="form-group">
+                    <label><i className="fas fa-envelope"></i> E-mail</label>
+                    <div className="form-value">{perfil.email || 'Não informado'}</div>
+                  </div>
+
+                  <div className="form-group">
+                    <label><i className="fas fa-phone"></i> Telefone / WhatsApp</label>
+                    <div className="form-value">{perfil.telefone || 'Não informado'}</div>
+                  </div>
+
+                  <div className="form-group">
+                    <label><i className="fas fa-map-marker-alt"></i> Localização</label>
+                    <div className="form-value">{perfil.localizacao || 'Não informado'}</div>
+                  </div>
+
+                  <div className="form-group">
+                    <label><i className="fas fa-calendar-alt"></i> Membro desde</label>
+                    <div className="form-value">{formatarData(perfil.data_criacao)}</div>
+                  </div>
+                </div>
+
+                <div className="form-actions">
+                  <button className="btn btn-primary" onClick={handleEditClick}>
+                    <i className="fas fa-edit"></i>
+                    Editar Perfil
+                  </button>
+                  <button className="btn btn-secondary" onClick={handleChangePasswordClick}>
+                    <i className="fas fa-key"></i>
+                    Alterar Senha
+                  </button>
+                  <button className="btn btn-danger" onClick={onLogout}>
+                    <i className="fas fa-sign-out-alt"></i>
+                    Sair
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
-        {/* Avaliações e Contato */}
-        <div className="two-columns-bottom">
-          <div className="avaliacoes-card">
-            <h3><i className="fas fa-star"></i> Avaliações Recentes</h3>
-            {avaliacoes.map(av => (
-              <div className="avaliacao-item" key={av.id}>
-                <div className="avaliacao-foto">
-                  <img src={av.foto} alt={av.nome} />
-                </div>
-                <div className="avaliacao-conteudo">
-                  <div className="avaliacao-header">
-                    <strong>{av.nome}</strong>
-                    <span className="avaliacao-data">{av.data}</span>
-                  </div>
-                  {renderStars(av.estrelas)}
-                  <p className="avaliacao-texto-completo">{av.comentario}</p>
-                </div>
-              </div>
-            ))}
-            <button className="btn-ver-mais">Ver mais avaliações <i className="fas fa-arrow-right"></i></button>
-          </div>
-
-    <div className="contato-card">
-  <h3><i className="fas fa-phone-alt"></i> Contato Direto</h3>
-  <div className="contato-buttons">
-    {/* WHATSAPP - Abre direto na conversa */}
-    <a 
-      href="https://wa.me/258841234567?text=Olá!%20Vi%20seu%20perfil%20no%20Business%20Link%20e%20gostaria%20de%20mais%20informações."
-      target="_blank" 
-      rel="noopener noreferrer"
-      className="btn-whatsapp"
-    >
-      <i className="fab fa-whatsapp"></i> WhatsApp
-    </a>
-    
-    {/* LIGAR - Abre o discador com o número */}
-    <a 
-      href="tel:+258841234567"
-      className="btn-ligar"
-    >
-      <i className="fas fa-phone"></i> Ligar Agora
-    </a>
-  </div>
-  <div className="termos">
-  </div>
-</div>
-        </div>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </div>
-
-      {/* Rodapé */}
-      <footer className="rodape">
-        <div className="rodape-grid">
-          <div className="rodape-col">
-            <h4>BLink</h4>
-            <p>A maior plataforma de intermediação de vendas em Moçambique com foco em confiança e resultados.</p>
-          </div>
-          <div className="rodape-col">
-            <h4>Empresa</h4>
-            <p>Sobre</p><p>FAQ</p><p>Contato</p>
-          </div>
-          <div className="rodape-col">
-            <h4>Legal</h4>
-            <p>Termos</p><p>Privacidade</p>
-          </div>
-          <div className="rodape-col">
-            <h4>Newsletter</h4>
-            <div className="newsletter-input">
-              <input type="email" placeholder="Seu email" />
-              <button><i className="fas fa-arrow-right"></i></button>
-            </div>
-          </div>
-        </div>
-        <div className="rodape-copyright">
-          © 2026 BLink Moçambique. Todos os direitos reservados.
-        </div>
-      </footer>
     </div>
   );
 };
