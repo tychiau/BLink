@@ -1,17 +1,10 @@
-// backend/index.js (VERSÃO COMPLETA COM ROTAS DE PERFIL DIRETAS)
+// backend/index.js - VERSÃO COMPLETA E CORRIGIDA
 
 const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 require('dotenv').config();
 const pool = require('./src/config/db');
-
-// Importar rotas
-const authRoutes = require('./src/routes/authRoutes');
-const protectedRoutes = require('./src/routes/protectedRoutes');
-const productRoutes = require('./src/routes/productRoutes');
-const intermediarioRoutes = require('./src/routes/intermediarioRoutes');
-const requestRoutes = require('./src/routes/requestRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -24,16 +17,11 @@ app.use(cors({
     credentials: true
 }));
 
-app.use((req, res, next) => {
-    res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
-    next();
-});
-
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ============================================
-// MIDDLEWARE DE AUTENTICAÇÃO (cópia local)
+// MIDDLEWARE DE AUTENTICAÇÃO
 // ============================================
 const { verifyAuthToken } = require('./src/utils/tokenUtils');
 
@@ -69,10 +57,10 @@ const authenticateToken = async (req, res, next) => {
 };
 
 // ============================================
-// ROTAS DE PERFIL DO INTERMEDIÁRIO (DIRETAS)
+// ROTAS DE PERFIL DO INTERMEDIÁRIO
 // ============================================
 
-// GET /api/intermediario/perfil - Buscar perfil
+// GET /api/intermediario/perfil
 app.get('/api/intermediario/perfil', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
@@ -115,19 +103,16 @@ app.get('/api/intermediario/perfil', authenticateToken, async (req, res) => {
     }
 });
 
-// PUT /api/intermediario/perfil - Atualizar perfil
+// PUT /api/intermediario/perfil
 app.put('/api/intermediario/perfil', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
         const { nome, email, telefone, localizacao } = req.body;
         
-        console.log('Atualizando perfil:', { userId, nome, email, telefone, localizacao });
-        
         if (!nome || !email) {
             return res.status(400).json({ error: true, message: 'Nome e email são obrigatórios' });
         }
         
-        // Verificar se email já existe
         const [existing] = await pool.execute(
             'SELECT id FROM usuarios WHERE email = ? AND id != ?',
             [email.trim(), userId]
@@ -160,7 +145,7 @@ app.put('/api/intermediario/perfil', authenticateToken, async (req, res) => {
     }
 });
 
-// PUT /api/intermediario/perfil/foto - Atualizar foto
+// PUT /api/intermediario/perfil/foto
 app.put('/api/intermediario/perfil/foto', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
@@ -189,7 +174,7 @@ app.put('/api/intermediario/perfil/foto', authenticateToken, async (req, res) =>
     }
 });
 
-// PUT /api/intermediario/alterar-senha - Alterar senha
+// PUT /api/intermediario/alterar-senha
 app.put('/api/intermediario/alterar-senha', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
@@ -236,22 +221,11 @@ app.put('/api/intermediario/alterar-senha', authenticateToken, async (req, res) 
     }
 });
 
-// GET /api/intermediario/listar - Rota pública
-app.get('/api/intermediario/listar', async (req, res) => {
-    try {
-        const [rows] = await pool.execute(
-            `SELECT id, nome, email, telefone, localizacao, tipo_usuario, status, data_criacao
-             FROM usuarios WHERE tipo_usuario = 'intermediario' AND status = 'ativo'
-             ORDER BY nome ASC`
-        );
-        res.json(rows);
-    } catch (error) {
-        console.error('Erro:', error);
-        res.status(500).json({ error: true, message: 'Erro ao listar intermediários' });
-    }
-});
+// ============================================
+// ROTAS DO DASHBOARD DO INTERMEDIÁRIO
+// ============================================
 
-// GET /api/intermediario/stats - Estatísticas
+// GET /api/intermediario/stats
 app.get('/api/intermediario/stats', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
@@ -292,7 +266,7 @@ app.get('/api/intermediario/stats', authenticateToken, async (req, res) => {
     }
 });
 
-// GET /api/intermediario/oportunidades - Oportunidades
+// GET /api/intermediario/oportunidades
 app.get('/api/intermediario/oportunidades', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
@@ -308,7 +282,8 @@ app.get('/api/intermediario/oportunidades', authenticateToken, async (req, res) 
                  SELECT produto_id FROM solicitacoes_intermediacao 
                  WHERE intermediario_id = ? AND status IN ('pendente', 'aceite')
              )
-             LIMIT 20`,
+             ORDER BY p.data_cadastro DESC
+             LIMIT 50`,
             [userId]
         );
         
@@ -336,16 +311,244 @@ app.get('/api/intermediario/oportunidades', authenticateToken, async (req, res) 
     }
 });
 
+// GET /api/intermediario/produtos-ativos
+app.get('/api/intermediario/produtos-ativos', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        const [rows] = await pool.execute(
+            `SELECT 
+                p.id, 
+                p.nome, 
+                p.preco_minimo, 
+                p.comissao_intermediario,
+                p.foto_produto,
+                si.status,
+                DATE_FORMAT(si.data_solicitacao, '%Y-%m-%d') as data_vinculo,
+                u.nome as vendedor_nome
+             FROM solicitacoes_intermediacao si
+             INNER JOIN produtos p ON p.id = si.produto_id
+             LEFT JOIN usuarios u ON u.id = p.vendedor_id
+             WHERE si.intermediario_id = ? AND si.status = 'aceite'
+             ORDER BY si.data_solicitacao DESC`,
+            [userId]
+        );
+        
+        const produtos = rows.map(p => {
+            let foto_url = null;
+            if (p.foto_produto && Buffer.isBuffer(p.foto_produto)) {
+                foto_url = `data:image/jpeg;base64,${p.foto_produto.toString('base64')}`;
+            }
+            return {
+                id: p.id,
+                nome: p.nome,
+                preco_minimo: parseFloat(p.preco_minimo),
+                comissao_intermediario: parseFloat(p.comissao_intermediario || 5),
+                comissao_valor: (parseFloat(p.preco_minimo) * parseFloat(p.comissao_intermediario || 5)) / 100,
+                foto_url,
+                vendedor_nome: p.vendedor_nome,
+                status: p.status,
+                data_vinculo: p.data_vinculo
+            };
+        });
+        
+        res.json(produtos);
+    } catch (error) {
+        console.error('Erro em produtos-ativos:', error);
+        res.json([]);
+    }
+});
+
+// GET /api/intermediario/meus-produtos-ativos (alias)
+app.get('/api/intermediario/meus-produtos-ativos', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        const [rows] = await pool.execute(
+            `SELECT 
+                p.id, 
+                p.nome, 
+                p.preco_minimo, 
+                p.comissao_intermediario,
+                p.foto_produto,
+                si.status
+             FROM solicitacoes_intermediacao si
+             INNER JOIN produtos p ON p.id = si.produto_id
+             WHERE si.intermediario_id = ? AND si.status = 'aceite'
+             ORDER BY si.data_solicitacao DESC`,
+            [userId]
+        );
+        
+        const produtos = rows.map(p => {
+            let foto_url = null;
+            if (p.foto_produto && Buffer.isBuffer(p.foto_produto)) {
+                foto_url = `data:image/jpeg;base64,${p.foto_produto.toString('base64')}`;
+            }
+            return {
+                id: p.id,
+                nome: p.nome,
+                preco_minimo: parseFloat(p.preco_minimo),
+                comissao_intermediario: parseFloat(p.comissao_intermediario || 5),
+                comissao_valor: (parseFloat(p.preco_minimo) * parseFloat(p.comissao_intermediario || 5)) / 100,
+                foto_url,
+                status: p.status
+            };
+        });
+        
+        res.json(produtos);
+    } catch (error) {
+        console.error('Erro em meus-produtos-ativos:', error);
+        res.json([]);
+    }
+});
+
+// GET /api/intermediario/aprovacoes-pendentes
+app.get('/api/intermediario/aprovacoes-pendentes', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        const [rows] = await pool.execute(
+            `SELECT 
+                si.id as solicitacao_id,
+                si.status,
+                DATE_FORMAT(si.data_solicitacao, '%Y-%m-%d') as data_solicitacao,
+                p.id as produto_id,
+                p.nome as produto_nome,
+                p.preco_minimo,
+                p.comissao_intermediario,
+                p.foto_produto,
+                u.nome as vendedor_nome,
+                u.id as vendedor_id
+             FROM solicitacoes_intermediacao si
+             INNER JOIN produtos p ON p.id = si.produto_id
+             LEFT JOIN usuarios u ON u.id = p.vendedor_id
+             WHERE si.intermediario_id = ? AND si.status = 'pendente'
+             ORDER BY si.data_solicitacao DESC`,
+            [userId]
+        );
+        
+        const solicitacoes = rows.map(s => {
+            let foto_url = null;
+            if (s.foto_produto && Buffer.isBuffer(s.foto_produto)) {
+                foto_url = `data:image/jpeg;base64,${s.foto_produto.toString('base64')}`;
+            }
+            return {
+                id: s.solicitacao_id,
+                produto_id: s.produto_id,
+                produto_nome: s.produto_nome,
+                vendedor_nome: s.vendedor_nome,
+                foto_url: foto_url,
+                data_solicitacao: s.data_solicitacao,
+                status: s.status
+            };
+        });
+        
+        res.json(solicitacoes);
+    } catch (error) {
+        console.error('Erro em aprovacoes-pendentes:', error);
+        res.json([]);
+    }
+});
+
+// POST /api/intermediario/solicitar/:produtoId
+app.post('/api/intermediario/solicitar/:produtoId', authenticateToken, async (req, res) => {
+    try {
+        const intermediarioId = req.user.id;
+        const { produtoId } = req.params;
+        
+        const [produto] = await pool.execute(
+            `SELECT id, vendedor_id, nome, estado FROM produtos WHERE id = ? AND estado = 'publicado'`,
+            [produtoId]
+        );
+        
+        if (produto.length === 0) {
+            return res.status(404).json({ success: false, message: 'Produto não encontrado ou indisponível' });
+        }
+        
+        const [existente] = await pool.execute(
+            `SELECT id, status FROM solicitacoes_intermediacao 
+             WHERE intermediario_id = ? AND produto_id = ? AND status IN ('pendente', 'aceite')`,
+            [intermediarioId, produtoId]
+        );
+        
+        if (existente.length > 0) {
+            return res.status(409).json({ success: false, message: `Já existe solicitação ${existente[0].status}` });
+        }
+        
+        const [uuidResult] = await pool.execute('SELECT UUID() as uuid');
+        const solicitacaoId = uuidResult[0].uuid;
+        
+        await pool.execute(
+            `INSERT INTO solicitacoes_intermediacao (id, produto_id, intermediario_id, vendedor_id, status, data_solicitacao)
+             VALUES (?, ?, ?, ?, 'pendente', NOW())`,
+            [solicitacaoId, produtoId, intermediarioId, produto[0].vendedor_id]
+        );
+        
+        res.status(201).json({ 
+            success: true, 
+            message: 'Solicitação enviada com sucesso!',
+            data: { solicitacao_id: solicitacaoId }
+        });
+        
+    } catch (error) {
+        console.error('Erro ao solicitar:', error);
+        res.status(500).json({ success: false, message: 'Erro ao criar solicitação' });
+    }
+});
+
+// DELETE /api/intermediario/solicitacao/:solicitacaoId
+app.delete('/api/intermediario/solicitacao/:solicitacaoId', authenticateToken, async (req, res) => {
+    try {
+        const intermediarioId = req.user.id;
+        const { solicitacaoId } = req.params;
+        
+        const [result] = await pool.execute(
+            `DELETE FROM solicitacoes_intermediacao 
+             WHERE id = ? AND intermediario_id = ? AND status = 'pendente'`,
+            [solicitacaoId, intermediarioId]
+        );
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Solicitação não encontrada' });
+        }
+        
+        res.json({ message: 'Solicitação cancelada com sucesso' });
+        
+    } catch (error) {
+        console.error('Erro ao cancelar:', error);
+        res.status(500).json({ message: 'Erro ao cancelar solicitação' });
+    }
+});
+
+// GET /api/intermediario/listar - Rota pública
+app.get('/api/intermediario/listar', async (req, res) => {
+    try {
+        const [rows] = await pool.execute(
+            `SELECT id, nome, email, telefone, localizacao, tipo_usuario, status, data_criacao
+             FROM usuarios WHERE tipo_usuario = 'intermediario' AND status = 'ativo'
+             ORDER BY nome ASC`
+        );
+        res.json(rows);
+    } catch (error) {
+        console.error('Erro:', error);
+        res.status(500).json({ error: true, message: 'Erro ao listar intermediários' });
+    }
+});
+
 // ============================================
 // ROTAS EXISTENTES
 // ============================================
+const authRoutes = require('./src/routes/authRoutes');
+const protectedRoutes = require('./src/routes/protectedRoutes');
+const productRoutes = require('./src/routes/productRoutes');
+const requestRoutes = require('./src/routes/requestRoutes');
+
 app.use('/auth', authRoutes);
 app.use('/protected', protectedRoutes);
 app.use('/api', productRoutes);
-app.use('/api/intermediario-old', intermediarioRoutes);
 app.use('/api/requests', requestRoutes);
 
-// Rota base
+// Rota base com informações completas
 app.get('/', (req, res) => {
     res.json({
         sistema: "Blink - Intermediacao de Compra e Venda",
@@ -354,7 +557,13 @@ app.get('/', (req, res) => {
             auth: "/auth",
             perfil: "/api/intermediario/perfil",
             listar: "/api/intermediario/listar",
-            stats: "/api/intermediario/stats"
+            stats: "/api/intermediario/stats",
+            oportunidades: "/api/intermediario/oportunidades",
+            produtos_ativos: "/api/intermediario/produtos-ativos",
+            aprovacoes_pendentes: "/api/intermediario/aprovacoes-pendentes",
+            meus_produtos_ativos: "/api/intermediario/meus-produtos-ativos",
+            solicitar: "POST /api/intermediario/solicitar/:produtoId",
+            cancelar: "DELETE /api/intermediario/solicitacao/:solicitacaoId"
         },
         timestamp: new Date().toISOString()
     });
@@ -368,6 +577,7 @@ app.use((req, res) => {
     });
 });
 
+// Middleware de erro global
 app.use((err, req, res, next) => {
     console.error('Erro:', err);
     res.status(500).json({
@@ -376,16 +586,9 @@ app.use((err, req, res, next) => {
     });
 });
 
+// Iniciar servidor
 app.listen(PORT, () => {
     console.log(`Servidor rodando em http://localhost:${PORT}`);
-    console.log(`Rotas disponíveis:`);
-    console.log(`  - GET /api/intermediario/perfil`);
-    console.log(`  - PUT /api/intermediario/perfil`);
-    console.log(`  - PUT /api/intermediario/perfil/foto`);
-    console.log(`  - PUT /api/intermediario/alterar-senha`);
-    console.log(`  - GET /api/intermediario/listar`);
-    console.log(`  - GET /api/intermediario/stats`);
-    console.log(`  - GET /api/intermediario/oportunidades`);
 });
 
 module.exports = pool;
