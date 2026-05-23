@@ -43,14 +43,6 @@ const IconMensagens = () => (
   </svg>
 );
 
-const IconCarrinho = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1e3a5f" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="9" cy="21" r="1" />
-    <circle cx="20" cy="21" r="1" />
-    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-  </svg>
-);
-
 const IconConfiguracoes = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1e3a5f" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="3" />
@@ -124,13 +116,12 @@ const getCategoriaNome = (categoriaId) => {
 };
 
 // ============================================
-// CONFIGURAÇÕES DO MENU
+// CONFIGURAÇÕES DO MENU (SEM CARRINHO)
 // ============================================
 
 const menuItemsConfig = [
   { label: "Dashboard", icon: <IconDashboard />, page: "dashboard" },
   { label: "Meus Pedidos", icon: <IconPedidos />, page: "pedidos" },
-  { label: "Carrinho", icon: <IconCarrinho />, page: "carrinho" },
   { label: "Favoritos", icon: <IconFavoritos />, page: "favoritos" },
   { label: "Negociações", icon: <IconNegociacoes />, page: "negociacoes" },
   { label: "Mensagens", icon: <IconMensagens />, page: "mensagens" },
@@ -150,6 +141,7 @@ export default function ClienteDashboardPage() {
   const [produtos, setProdutos] = useState([]);
   const [produtosOriginais, setProdutosOriginais] = useState([]);
   const [carrinho, setCarrinho] = useState([]);
+  const [showCarrinho, setShowCarrinho] = useState(false);
   const [negociacoes, setNegociacoes] = useState([]);
   const [perfil, setPerfil] = useState(null);
   const [notification, setNotification] = useState({ show: false, message: "", type: "" });
@@ -376,6 +368,66 @@ export default function ClienteDashboardPage() {
         </div>
       )}
 
+      {/* MODAL DO CARRINHO */}
+      {showCarrinho && (
+        <div className="cd-modal-carrinho-overlay" onClick={() => setShowCarrinho(false)}>
+          <div className="cd-modal-carrinho" onClick={(e) => e.stopPropagation()}>
+            <div className="cd-modal-carrinho-header">
+              <h3>Meu Carrinho</h3>
+              <button className="cd-modal-carrinho-close" onClick={() => setShowCarrinho(false)}>
+                ✕
+              </button>
+            </div>
+            <div className="cd-modal-carrinho-body">
+              {carrinho.length === 0 ? (
+                <div className="cd-carrinho-vazio">
+                  <IconCarrinhoCompras />
+                  <p>Seu carrinho está vazio</p>
+                  <small>Adicione produtos clicando em "Comprar"</small>
+                </div>
+              ) : (
+                <>
+                  <div className="cd-modal-carrinho-lista">
+                    {carrinho.map((item) => (
+                      <div key={item.id} className="cd-modal-carrinho-item">
+                        <img
+                          src={item.imagem}
+                          alt={item.nome}
+                          className="cd-modal-carrinho-imagem"
+                          onError={(e) => {
+                            e.target.src = "https://placehold.co/60x60/1e3a5f/ffffff?text=P";
+                          }}
+                        />
+                        <div className="cd-modal-carrinho-info">
+                          <div className="cd-modal-carrinho-nome">{item.nome}</div>
+                          <div className="cd-modal-carrinho-preco">{item.preco_formatado}</div>
+                        </div>
+                        <button 
+                          className="cd-modal-carrinho-remover"
+                          onClick={() => handleCancelarCompra(item.id, item.nome)}
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="cd-modal-carrinho-total">
+                    <span>Total:</span>
+                    <strong>{calcularTotalCarrinho()}</strong>
+                  </div>
+                  <button 
+                    className="cd-modal-carrinho-finalizar"
+                    onClick={handleFinalizarCompra}
+                  >
+                    Finalizar Compra
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* NAVBAR */}
       <nav className="cd-navbar">
         <span className="cd-logo">BLINK</span>
@@ -394,11 +446,11 @@ export default function ClienteDashboardPage() {
             <IconNotificacao />
           </button>
           <button 
-            className="cd-icon-btn"
-            onClick={() => setActivePage("carrinho")}
+            className="cd-icon-btn cd-carrinho-btn"
+            onClick={() => setShowCarrinho(true)}
             style={{ position: "relative" }}
           >
-            <IconCarrinho />
+            <IconCarrinhoCompras />
             {carrinho.length > 0 && (
               <span className="cd-carrinho-badge">{carrinho.length}</span>
             )}
@@ -565,96 +617,8 @@ export default function ClienteDashboardPage() {
             </>
           )}
 
-          {/* CARRINHO PAGE */}
-          {activePage === "carrinho" && (
-            <div className="cd-carrinho-container">
-              <div className="cd-section-header">
-                <h2 className="cd-section-title">Meu Carrinho</h2>
-                <span className="cd-produtos-count">{carrinho.length} itens</span>
-              </div>
-
-              {carrinho.length === 0 ? (
-                <div className="cd-empty-state">
-                  <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#718096" strokeWidth="1.5">
-                    <circle cx="9" cy="21" r="1" />
-                    <circle cx="20" cy="21" r="1" />
-                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-                  </svg>
-                  <p>Seu carrinho está vazio</p>
-                  <small>Adicione produtos clicando em "Comprar" no Dashboard.</small>
-                  <button 
-                    className="cd-btn-voltar"
-                    onClick={() => setActivePage("dashboard")}
-                  >
-                    Voltar para Produtos
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <div className="cd-carrinho-lista">
-                    {carrinho.map((item) => (
-                      <div key={item.id} className="cd-carrinho-item">
-                        <img
-                          src={item.imagem}
-                          alt={item.nome}
-                          className="cd-carrinho-imagem"
-                          onError={(e) => {
-                            e.target.src = "https://placehold.co/80x80/1e3a5f/ffffff?text=Produto";
-                          }}
-                        />
-                        <div className="cd-carrinho-info">
-                          <div className="cd-carrinho-header">
-                            <h3 className="cd-carrinho-nome">{item.nome}</h3>
-                            <span className="cd-carrinho-categoria">{item.categoria_nome}</span>
-                          </div>
-                          <div className="cd-carrinho-preco">
-                            {item.preco_formatado}
-                          </div>
-                          <div className="cd-carrinho-localizacao">
-                            <IconLocalizacao /> {item.provincia || "Localização não definida"}
-                          </div>
-                          {item.intermediario_nome && (
-                            <div className="cd-carrinho-intermediario">
-                              Intermediário: {item.intermediario_nome}
-                            </div>
-                          )}
-                          <div className="cd-carrinho-data">
-                            Adicionado em: {new Date(item.dataCompra).toLocaleDateString('pt-MZ')}
-                          </div>
-                        </div>
-                        <button 
-                          className="cd-btn-cancelar"
-                          onClick={() => handleCancelarCompra(item.id, item.nome)}
-                        >
-                          Cancelar Compra
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="cd-carrinho-resumo">
-                    <div className="cd-resumo-linha">
-                      <span>Total de itens:</span>
-                      <strong>{carrinho.length} produtos</strong>
-                    </div>
-                    <div className="cd-resumo-linha cd-resumo-total">
-                      <span>Valor Total:</span>
-                      <strong className="cd-total-valor">{calcularTotalCarrinho()}</strong>
-                    </div>
-                    <button 
-                      className="cd-btn-finalizar"
-                      onClick={handleFinalizarCompra}
-                    >
-                      Finalizar Compra
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
           {/* OUTRAS PÁGINAS */}
-          {activePage !== "dashboard" && activePage !== "carrinho" && (
+          {activePage !== "dashboard" && (
             <div className="cd-empty-state" style={{ padding: "60px" }}>
               <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Em desenvolvimento</h2>
               <p style={{ color: "#718096" }}>Esta página será implementada em breve.</p>
@@ -746,189 +710,172 @@ export default function ClienteDashboardPage() {
           border: 2px solid #fff;
         }
 
-        .cd-carrinho-container {
-          width: 100%;
-        }
-
-        .cd-carrinho-lista {
+        /* Modal do Carrinho */
+        .cd-modal-carrinho-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.6);
+          backdrop-filter: blur(4px);
+          z-index: 10000;
           display: flex;
-          flex-direction: column;
-          gap: 1rem;
-          margin-bottom: 2rem;
+          align-items: center;
+          justify-content: center;
         }
 
-        .cd-carrinho-item {
+        .cd-modal-carrinho {
           background: white;
-          border-radius: 20px;
-          border: 1px solid #e2e8f0;
-          padding: 1.5rem;
+          border-radius: 24px;
+          width: 90%;
+          max-width: 500px;
+          max-height: 80vh;
+          overflow: hidden;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+          animation: slideUp 0.3s ease;
+        }
+
+        .cd-modal-carrinho-header {
           display: flex;
+          justify-content: space-between;
           align-items: center;
-          gap: 1.5rem;
-          transition: all 0.2s;
+          padding: 1.25rem 1.5rem;
+          border-bottom: 1px solid #e2e8f0;
+          background: #f8fafc;
         }
 
-        .cd-carrinho-item:hover {
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        }
-
-        .cd-carrinho-imagem {
-          width: 100px;
-          height: 100px;
-          border-radius: 12px;
-          object-fit: cover;
-          background: #f1f5f9;
-        }
-
-        .cd-carrinho-info {
-          flex: 1;
-        }
-
-        .cd-carrinho-header {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          flex-wrap: wrap;
-          margin-bottom: 0.5rem;
-        }
-
-        .cd-carrinho-nome {
-          font-size: 1rem;
+        .cd-modal-carrinho-header h3 {
+          font-size: 1.125rem;
           font-weight: 600;
           color: #0f172a;
         }
 
-        .cd-carrinho-categoria {
-          font-size: 0.688rem;
-          font-weight: 500;
-          padding: 0.25rem 0.5rem;
-          background: #f1f5f9;
+        .cd-modal-carrinho-close {
+          background: none;
+          border: none;
+          font-size: 1.25rem;
+          cursor: pointer;
           color: #64748b;
-          border-radius: 20px;
+          transition: all 0.2s;
         }
 
-        .cd-carrinho-preco {
-          font-size: 1rem;
-          font-weight: 700;
-          color: #1e3a5f;
-          margin-bottom: 0.25rem;
+        .cd-modal-carrinho-close:hover {
+          color: #ef4444;
         }
 
-        .cd-carrinho-localizacao {
-          font-size: 0.75rem;
-          color: #64748b;
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          margin-bottom: 0.25rem;
+        .cd-modal-carrinho-body {
+          padding: 1.5rem;
+          max-height: 60vh;
+          overflow-y: auto;
         }
 
-        .cd-carrinho-intermediario {
-          font-size: 0.75rem;
-          color: #64748b;
-          margin-bottom: 0.25rem;
-        }
-
-        .cd-carrinho-data {
-          font-size: 0.688rem;
+        .cd-carrinho-vazio {
+          text-align: center;
+          padding: 2rem;
           color: #94a3b8;
         }
 
-        .cd-btn-cancelar {
-          padding: 0.75rem 1.5rem;
+        .cd-carrinho-vazio svg {
+          width: 48px;
+          height: 48px;
+          margin-bottom: 1rem;
+          stroke: #94a3b8;
+        }
+
+        .cd-modal-carrinho-lista {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+          margin-bottom: 1.5rem;
+        }
+
+        .cd-modal-carrinho-item {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          padding: 0.75rem;
+          background: #f8fafc;
+          border-radius: 12px;
+        }
+
+        .cd-modal-carrinho-imagem {
+          width: 60px;
+          height: 60px;
+          border-radius: 10px;
+          object-fit: cover;
+        }
+
+        .cd-modal-carrinho-info {
+          flex: 1;
+        }
+
+        .cd-modal-carrinho-nome {
+          font-size: 0.875rem;
+          font-weight: 600;
+          color: #0f172a;
+          margin-bottom: 0.25rem;
+        }
+
+        .cd-modal-carrinho-preco {
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: #1e3a5f;
+        }
+
+        .cd-modal-carrinho-remover {
+          padding: 0.5rem 1rem;
           background: #ef4444;
           color: white;
           border: none;
-          border-radius: 12px;
-          font-size: 0.875rem;
-          font-weight: 600;
+          border-radius: 8px;
+          font-size: 0.75rem;
+          font-weight: 500;
           cursor: pointer;
           transition: all 0.2s;
-          white-space: nowrap;
         }
 
-        .cd-btn-cancelar:hover {
+        .cd-modal-carrinho-remover:hover {
           background: #dc2626;
-          transform: translateY(-1px);
         }
 
-        .cd-carrinho-resumo {
-          background: white;
-          border-radius: 20px;
-          border: 1px solid #e2e8f0;
-          padding: 1.5rem;
-          margin-top: 1rem;
-        }
-
-        .cd-resumo-linha {
+        .cd-modal-carrinho-total {
           display: flex;
           justify-content: space-between;
-          padding: 0.75rem 0;
-          font-size: 0.875rem;
-          color: #475569;
-          border-bottom: 1px solid #e2e8f0;
-        }
-
-        .cd-resumo-total {
-          border-bottom: none;
+          align-items: center;
+          padding: 1rem 0;
+          border-top: 1px solid #e2e8f0;
           font-size: 1rem;
           font-weight: 600;
           color: #0f172a;
         }
 
-        .cd-total-valor {
-          color: #1e3a5f;
-          font-size: 1.25rem;
-        }
-
-        .cd-btn-finalizar {
+        .cd-modal-carrinho-finalizar {
           width: 100%;
-          padding: 0.875rem;
+          padding: 0.75rem;
           background: #10b981;
           color: white;
           border: none;
           border-radius: 12px;
-          font-size: 1rem;
+          font-size: 0.875rem;
           font-weight: 600;
           cursor: pointer;
           transition: all 0.2s;
           margin-top: 1rem;
         }
 
-        .cd-btn-finalizar:hover {
+        .cd-modal-carrinho-finalizar:hover {
           background: #059669;
-          transform: translateY(-1px);
         }
 
-        .cd-btn-voltar {
-          margin-top: 1rem;
-          padding: 0.625rem 1.25rem;
-          background: #1e3a5f;
-          color: white;
-          border: none;
-          border-radius: 10px;
-          font-size: 0.875rem;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .cd-btn-voltar:hover {
-          background: #2d4a6e;
-        }
-
-        @media (max-width: 768px) {
-          .cd-carrinho-item {
-            flex-direction: column;
-            text-align: center;
+        @keyframes slideUp {
+          from {
+            transform: translateY(50px);
+            opacity: 0;
           }
-          
-          .cd-carrinho-header {
-            justify-content: center;
-          }
-          
-          .cd-btn-cancelar {
-            width: 100%;
+          to {
+            transform: translateY(0);
+            opacity: 1;
           }
         }
       `}</style>
