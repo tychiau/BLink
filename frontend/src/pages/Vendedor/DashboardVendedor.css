@@ -176,7 +176,7 @@
    SIDEBAR
    ============================================ */
 .dv-sidebar {
-  width: 200px;
+  width: 280px;
   flex-shrink: 0;
   background-color: var(--branco);
   border-right: 1px solid var(--cinza-borda);
@@ -874,4 +874,70 @@
   
   .dv-modal-confirm-buttons { flex-direction: column; }
   .dv-modal-confirm-buttons button { width: 100%; }
+}
+
+/* Botão Sair - cor vermelha com ícone */
+.dv-btn-sair {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 16px;
+  margin-top: 12px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dv-btn-sair:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+}
+
+/* Perfil do vendedor */
+.dv-sidebar-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  margin-top: auto;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 12px;
+
+}
+
+.dv-profile-avatar {
+  width: 40px;
+  height: 40px;
+  background: #1e3a5f;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.dv-profile-info {
+  flex: 1;
+}
+
+.dv-profile-name {
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 2px;
+  font-size: 0.875rem;
+}
+
+.dv-profile-role {
+  font-size: 0.75rem;
+  color: #64748b;
 }

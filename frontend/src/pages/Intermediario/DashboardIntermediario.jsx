@@ -954,12 +954,12 @@ export default function DashboardIntermediario() {
             align-items: center;
             justify-content: center;
             gap: 8px;
-            width: calc(100% - 20px);  /* Adicione esta linha - reduz a largura em 20px */
-            margin: 12px 10px;          /* Modifique esta linha - adicione margens laterais */
-            padding: 8px 12px;          /* Reduza o padding - estava 10px 16px */
+            width: calc(100% - 20px);  
+            margin: 12px 10px;         
+            padding: 8px 12px;          
             background: #ef4444;
             color: white;
-            border: none;
+            border: none;s
             border-radius: 12px;
             font-size: 14px;
             font-weight: 500;

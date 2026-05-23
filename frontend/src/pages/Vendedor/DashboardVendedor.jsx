@@ -1,3 +1,4 @@
+// frontend/src/pages/Vendedor/DashboardVendedor.jsx
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "./DashboardVendedor.css";
@@ -5,8 +6,6 @@ import CadastroProduto from './CadastroProduto';
 import Vendas from "./Vendas";
 import ListarIntermediarios from './ListarIntermediarios';
 import { productsAPI } from "../../api";
-
-
 
 // Ícones profissionais em SVG - Azul #1e3a5f
 const IconDashboard = () => (
@@ -328,7 +327,6 @@ export default function DashboardVendedor() {
   const loadingRef = useRef(false);
   const lastSyncRef = useRef(0);
 
-  // Estado para o contador de notificações
   const [solicitacoesPendentes, setSolicitacoesPendentes] = useState([]);
   const [solicitacoesCount, setSolicitacoesCount] = useState(0);
 
@@ -381,7 +379,6 @@ export default function DashboardVendedor() {
     return null;
   }, []);
 
-  // Função para buscar solicitações pendentes para o badge
   const fetchSolicitacoesPendentes = useCallback(async () => {
     try {
       const token = localStorage.getItem("accessToken");
@@ -544,7 +541,6 @@ export default function DashboardVendedor() {
     setSyncKey(prev => prev + 1);
   }, [fetchProdutos, fetchStats, fetchSolicitacoesPendentes, usuarioLogado.id]);
 
-  // Sincronização entre abas
   useEffect(() => {
     let channel;
 
@@ -601,7 +597,6 @@ export default function DashboardVendedor() {
     };
   }, [loadAllData, loadUserData, navigate, usuarioLogado.id]);
 
-  // Carregamento inicial
   useEffect(() => {
     loadUserData();
     loadAllData();
@@ -615,7 +610,6 @@ export default function DashboardVendedor() {
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    // Intervalo para buscar solicitações a cada 30 segundos
     const interval = setInterval(() => {
       if (document.hidden) return;
       fetchSolicitacoesPendentes();
@@ -648,7 +642,6 @@ export default function DashboardVendedor() {
     }
   }, [usuarioLogado.id]);
 
-  // Carregar intermediários quando a aba for selecionada
   useEffect(() => {
     if (activePage === "Intermediarios") {
       fetchIntermediarios();
@@ -663,12 +656,9 @@ export default function DashboardVendedor() {
     showNotification(`${produtos.length} produtos encontrados!`, "success");
   };
 
-
-    // Buscar lista de intermediários disponíveis
   const fetchIntermediarios = async () => {
     setLoadingIntermediarios(true);
     try {
-      // Essa rota já existe no seu backend e não precisa de token!
       const response = await fetch('https://blink-oz62.onrender.com/api/intermediario/listar');
       
       if (!response.ok) throw new Error("Erro ao buscar");
@@ -865,7 +855,6 @@ export default function DashboardVendedor() {
           />
         </div>
         <div className="dv-nav-icons">
-          {/* Botão de notificações com badge */}
           <button
             className="dv-icon-btn"
             onClick={() => navigate("/vendedor/solicitacoes")}
@@ -906,7 +895,7 @@ export default function DashboardVendedor() {
       </nav>
 
       <div className="dv-body">
-        <aside className="dv-sidebar">
+                <aside className="dv-sidebar">
           <nav className="dv-menu">
             {menuItemsConfig.map((item) => (
               <button
@@ -919,6 +908,8 @@ export default function DashboardVendedor() {
               </button>
             ))}
           </nav>
+          
+          {/* PERFIL DO VENDEDOR - ACIMA DO BOTÃO SAIR */}
           <div className="dv-sidebar-profile">
             <div className="dv-profile-avatar">
               {getInicial(usuarioLogado.nome)}
@@ -930,7 +921,14 @@ export default function DashboardVendedor() {
               </p>
             </div>
           </div>
+          
+          {/* BOTÃO SAIR COM ÍCONE E COR VERMELHA */}
           <button onClick={handleLogout} className="dv-btn-sair">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
             Sair
           </button>
         </aside>
@@ -1061,7 +1059,7 @@ export default function DashboardVendedor() {
             </div>
           )}
 
-                    {activePage === "Intermediarios" && (
+          {activePage === "Intermediarios" && (
             <div>
               <div className="dv-section-header" style={{ marginBottom: 20 }}>
                 <div>
