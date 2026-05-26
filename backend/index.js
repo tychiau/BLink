@@ -524,60 +524,87 @@ app.get('/api/intermediario/listar', async (req, res) => {
 });
 
 // ============================================
-// ROTAS DE SOLICITAÇÕES DE COMPRA
+// ROTAS DE COMPRA DO CLIENTE
 // ============================================
 
-// Cliente solicita compra
+// Cliente solicita compra (adiciona no carrinho) - VERSÃO CORRIGIDA
 app.post('/api/cliente/solicitar-compra', authenticateToken, async (req, res) => {
     try {
-        const clienteId = req.user.id;
+        const cliente_id = req.user.id;
         const { produto_id, intermediario_id, valor_final } = req.body;
         
         console.log("=== SOLICITAÇÃO DE COMPRA ===");
-        console.log("Cliente ID:", clienteId);
+        console.log("Cliente ID:", cliente_id);
         console.log("Produto ID:", produto_id);
         console.log("Intermediário ID:", intermediario_id);
         console.log("Valor:", valor_final);
         
-        if (!produto_id || !intermediario_id || !valor_final) {
-            return res.status(400).json({ success: false, message: "Campos obrigatórios faltando" });
+        // VALIDAÇÃO DOS CAMPOS OBRIGATÓRIOS
+        if (!produto_id) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Campo 'produto_id' é obrigatório" 
+            });
         }
         
-        // Verificar se o cliente existe
+        if (!intermediario_id) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Campo 'intermediario_id' é obrigatório" 
+            });
+        }
+        
+        if (!valor_final || valor_final <= 0) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Campo 'valor_final' deve ser um valor positivo" 
+            });
+        }
+        
+        // Verificar se o cliente existe (CORRIGIDO: usando cliente_id)
         const [cliente] = await pool.execute(
-            'SELECT id FROM usuarios WHERE id = ? AND tipo_usuario = "cliente"',
-            [clienteId]
+            'SELECT id, nome FROM usuarios WHERE id = ? AND tipo_usuario = "cliente"',
+            [cliente_id]
         );
         
         if (cliente.length === 0) {
-            return res.status(404).json({ success: false, message: "Cliente não encontrado" });
+            return res.status(404).json({ 
+                success: false, 
+                message: "Cliente não encontrado" 
+            });
         }
         
         // Verificar se o intermediário existe
         const [intermediario] = await pool.execute(
-            'SELECT id FROM usuarios WHERE id = ? AND tipo_usuario = "intermediario"',
+            'SELECT id, nome FROM usuarios WHERE id = ? AND tipo_usuario = "intermediario"',
             [intermediario_id]
         );
         
         if (intermediario.length === 0) {
-            return res.status(404).json({ success: false, message: "Intermediário não encontrado" });
+            return res.status(404).json({ 
+                success: false, 
+                message: "Intermediário não encontrado" 
+            });
         }
         
-        // Verificar se o produto existe
+        // Verificar se o produto existe e está publicado
         const [produto] = await pool.execute(
-            'SELECT id FROM produtos WHERE id = ? AND estado = "publicado"',
+            'SELECT id, nome, preco_minimo FROM produtos WHERE id = ? AND estado = "publicado"',
             [produto_id]
         );
         
         if (produto.length === 0) {
-            return res.status(404).json({ success: false, message: "Produto não encontrado" });
+            return res.status(404).json({ 
+                success: false, 
+                message: "Produto não encontrado ou indisponível" 
+            });
         }
         
-        // Verificar se já existe solicitação pendente
+        // Verificar se já existe solicitação pendente para este produto (CORRIGIDO: usando cliente_id)
         const [existente] = await pool.execute(
             `SELECT id FROM vendas 
              WHERE cliente_id = ? AND produto_id = ? AND status_venda = 'retido'`,
-            [clienteId, produto_id]
+            [cliente_id, produto_id]
         );
         
         if (existente.length > 0) {
@@ -587,18 +614,18 @@ app.post('/api/cliente/solicitar-compra', authenticateToken, async (req, res) =>
             });
         }
         
-        // Gerar ID único
+        // Gerar ID único para a venda
         const [uuidResult] = await pool.execute('SELECT UUID() as uuid');
         const vendaId = uuidResult[0].uuid;
         
-        // Inserir na tabela vendas
+        // Inserir na tabela vendas (CORRIGIDO: usando cliente_id, intermediario_id)
         await pool.execute(
             `INSERT INTO vendas (id, produto_id, cliente_id, intermediario_id, valor_final, status_venda, data_venda)
              VALUES (?, ?, ?, ?, ?, 'retido', NOW())`,
-            [vendaId, produto_id, clienteId, intermediario_id, valor_final]
+            [vendaId, produto_id, cliente_id, intermediario_id, valor_final]
         );
         
-        console.log(`✅ Venda criada com sucesso: ${vendaId}`);
+        console.log(`Venda criada com sucesso. ID: ${vendaId}`);
         
         res.status(201).json({ 
             success: true, 
@@ -607,15 +634,18 @@ app.post('/api/cliente/solicitar-compra', authenticateToken, async (req, res) =>
         });
         
     } catch (error) {
-        console.error('❌ Erro ao solicitar compra:', error);
-        res.status(500).json({ success: false, message: error.message });
+        console.error('Erro ao solicitar compra:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: "Erro interno do servidor: " + error.message 
+        });
     }
 });
 
-// Cliente busca suas solicitações (carrinho)
+// 2. Cliente busca suas solicitações (carrinho)
 app.get('/api/cliente/minhas-solicitacoes', authenticateToken, async (req, res) => {
     try {
-        const clienteId = req.user.id;
+        const cliente_id = req.user.id;
         
         const [rows] = await pool.execute(
             `SELECT 
@@ -625,14 +655,14 @@ app.get('/api/cliente/minhas-solicitacoes', authenticateToken, async (req, res) 
                 v.status_venda,
                 v.data_venda,
                 p.nome as produto_nome,
-                p.foto_produto,
+                p.foto_prodoto,
                 u.nome as intermediario_nome
              FROM vendas v
              INNER JOIN produtos p ON v.produto_id = p.id
              INNER JOIN usuarios u ON v.intermediario_id = u.id
              WHERE v.cliente_id = ? AND v.status_venda = 'retido'
              ORDER BY v.data_venda DESC`,
-            [clienteId]
+            [cliente_id]
         );
         
         const solicitacoes = rows.map(v => {
@@ -661,33 +691,42 @@ app.get('/api/cliente/minhas-solicitacoes', authenticateToken, async (req, res) 
     }
 });
 
-// Cliente cancela solicitação
+// 3. Cliente cancela solicitação
 app.delete('/api/cliente/cancelar-solicitacao/:solicitacaoId', authenticateToken, async (req, res) => {
     const { solicitacaoId } = req.params;
-    const clienteId = req.user.id;
+    const cliente_id = req.user.id;
     
     try {
         const [result] = await pool.execute(
             `DELETE FROM vendas 
              WHERE id = ? AND cliente_id = ? AND status_venda = 'retido'`,
-            [solicitacaoId, clienteId]
+            [solicitacaoId, cliente_id]
         );
         
         if (result.affectedRows === 0) {
-            return res.status(404).json({ success: false, message: "Solicitação não encontrada" });
+            return res.status(404).json({ 
+                success: false, 
+                message: "Solicitação não encontrada" 
+            });
         }
         
-        res.json({ success: true, message: "Solicitação cancelada com sucesso" });
+        res.json({ 
+            success: true, 
+            message: "Solicitação cancelada com sucesso" 
+        });
     } catch (error) {
         console.error('Erro:', error);
-        res.status(500).json({ success: false, message: error.message });
+        res.status(500).json({ 
+            success: false, 
+            message: error.message 
+        });
     }
 });
 
 // Intermediário busca solicitações de compra pendentes
 app.get('/api/intermediario/solicitacoes-compra', authenticateToken, async (req, res) => {
     try {
-        const intermediarioId = req.user.id;
+        const intermediario_id = req.user.id;
         
         const [rows] = await pool.execute(
             `SELECT 
@@ -706,7 +745,7 @@ app.get('/api/intermediario/solicitacoes-compra', authenticateToken, async (req,
              INNER JOIN usuarios u ON v.cliente_id = u.id
              WHERE v.intermediario_id = ? AND v.status_venda = 'retido'
              ORDER BY v.data_venda DESC`,
-            [intermediarioId]
+            [intermediario_id]
         );
         
         const solicitacoes = rows.map(v => {
@@ -740,13 +779,13 @@ app.get('/api/intermediario/solicitacoes-compra', authenticateToken, async (req,
 // Intermediário aprova solicitação de compra
 app.post('/api/intermediario/solicitacoes-compra/:solicitacaoId/aprovar', authenticateToken, async (req, res) => {
     const { solicitacaoId } = req.params;
-    const intermediarioId = req.user.id;
+    const intermediario_id = req.user.id;
     
     try {
         const [solicitacao] = await pool.execute(
             `SELECT id FROM vendas 
              WHERE id = ? AND intermediario_id = ? AND status_venda = 'retido'`,
-            [solicitacaoId, intermediarioId]
+            [solicitacaoId, intermediario_id]
         );
         
         if (solicitacao.length === 0) {
@@ -769,13 +808,13 @@ app.post('/api/intermediario/solicitacoes-compra/:solicitacaoId/aprovar', authen
 // Intermediário rejeita solicitação de compra
 app.post('/api/intermediario/solicitacoes-compra/:solicitacaoId/rejeitar', authenticateToken, async (req, res) => {
     const { solicitacaoId } = req.params;
-    const intermediarioId = req.user.id;
+    const intermediario_id = req.user.id;
     
     try {
         const [solicitacao] = await pool.execute(
             `SELECT id FROM vendas 
              WHERE id = ? AND intermediario_id = ? AND status_venda = 'retido'`,
-            [solicitacaoId, intermediarioId]
+            [solicitacaoId, intermediario_id]
         );
         
         if (solicitacao.length === 0) {
@@ -867,5 +906,6 @@ app.listen(PORT, () => {
     console.log(`   POST /api/intermediario/solicitacoes-compra/:id/aprovar`);
     console.log(`   POST /api/intermediario/solicitacoes-compra/:id/rejeitar`);
 });
+
 
 module.exports = pool;
