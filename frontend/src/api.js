@@ -124,7 +124,7 @@ export const intermediarioAPI = {
 
     alterarSenha: async (token, senhaData) =>
         request('/api/intermediario/alterar-senha', 'PUT', token, senhaData, 'Erro ao alterar senha'),
-    
+
      getSolicitacoesCompra: async (token) =>
         request('/api/intermediario/solicitacoes-compra', 'GET', token, null, 'Erro ao buscar solicitações de compra'),
     
