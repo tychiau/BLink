@@ -7,6 +7,7 @@ import MeusProdutos from "./MeusProdutos";
 import Vendas from "./Vendas";
 import Ganhos from "./Ganhos";
 import Chat from "./Chat";
+import SolicitacoesIntermediario from "./SolicitacoesIntermediario";
 import "./DashboardIntermediario.css";
 
 // ============================================
@@ -165,6 +166,7 @@ export default function DashboardIntermediario() {
   const [produtos, setProdutos] = useState([]);
   const [meusProdutos, setMeusProdutos] = useState([]);
   const [solicitacoes, setSolicitacoes] = useState([]);
+  const [solicitacoesCompraCount, setSolicitacoesCompraCount] = useState(0);
   const [stats, setStats] = useState({
     produtosAtivos: 0,
     vendasRealizadas: 0,
@@ -402,6 +404,26 @@ export default function DashboardIntermediario() {
     }
   }, []);
 
+  // Buscar contagem de solicitações de compra para o badge
+  const fetchSolicitacoesCompraCount = useCallback(async () => {
+    try {
+      const token = getToken();
+      if (!token) return;
+      
+      const response = await fetch('https://blink-oz62.onrender.com/api/intermediario/solicitacoes-compra', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      const data = await response.json();
+      
+      if (!data.error && Array.isArray(data)) {
+        setSolicitacoesCompraCount(data.length);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar contagem de solicitações:", error);
+    }
+  }, []);
+
   // ============================================
   // AÇÕES
   // ============================================
@@ -474,7 +496,8 @@ export default function DashboardIntermediario() {
       fetchProdutos(),
       fetchStats(),
       fetchMeusProdutos(),
-      fetchSolicitacoes()
+      fetchSolicitacoes(),
+      fetchSolicitacoesCompraCount()
     ]);
     
     setLoading(false);
@@ -561,8 +584,15 @@ export default function DashboardIntermediario() {
           />
         </div>
         <div className="di-nav-icons">
-          <button className="di-icon-btn">
+          <button 
+            className="di-icon-btn" 
+            onClick={() => setActivePage("solicitacoes")}
+            style={{ position: "relative" }}
+          >
             <IconNotificacao />
+            {solicitacoesCompraCount > 0 && (
+              <span className="di-solicitacoes-badge">{solicitacoesCompraCount}</span>
+            )}
           </button>
           <button className="di-icon-btn" onClick={() => setActivePage("chat")}>
             <IconChat />
@@ -590,7 +620,7 @@ export default function DashboardIntermediario() {
             ))}
           </nav>
           
-          {/* PERFIL DO USUÁRIO - MOVIDO PARA CIMA DO BOTÃO SAIR */}
+          {/* PERFIL DO USUÁRIO */}
           <div className="di-sidebar-profile">
             <div className="di-profile-avatar" onClick={() => setShowPerfilModal(true)}>
               {perfil ? getInicial(perfil.nome) : "I"}
@@ -831,6 +861,11 @@ export default function DashboardIntermediario() {
             />
           )}
 
+          {/* SOLICITAÇÕES PAGE */}
+          {activePage === "solicitacoes" && (
+            <SolicitacoesIntermediario />
+          )}
+
           {/* CHAT PAGE */}
           {activePage === "chat" && (
             <Chat 
@@ -950,29 +985,28 @@ export default function DashboardIntermediario() {
         }
         
         .di-btn-sair {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            width: calc(100% - 20px);  
-            margin: 12px 10px;         
-            padding: 8px 12px;          
-            background: #ef4444;
-            color: white;
-            border: none;s
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-          }
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          width: calc(100% - 20px);  
+          margin: 12px 10px;         
+          padding: 8px 12px;          
+          background: #ef4444;
+          color: white;
+          border: none;
+          border-radius: 12px;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
                   
         .di-btn-sair:hover {
           background: #dc2626;
           transform: translateY(-1px);
         }
         
-        /* Sidebar Profile - agora acima do botão sair */
         .di-sidebar {
           width: 280px;
           background: #ffffff;
@@ -1027,7 +1061,24 @@ export default function DashboardIntermediario() {
           color: #64748b;
         }
         
-        /* Remover scroll lateral */
+        .di-solicitacoes-badge {
+          position: absolute;
+          top: -5px;
+          right: -8px;
+          background-color: #ef4444;
+          color: white;
+          font-size: 10px;
+          font-weight: bold;
+          min-width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0 4px;
+          border: 2px solid #fff;
+        }
+        
         .di-root {
           overflow-x: hidden;
         }

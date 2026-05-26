@@ -124,6 +124,15 @@ export const intermediarioAPI = {
 
     alterarSenha: async (token, senhaData) =>
         request('/api/intermediario/alterar-senha', 'PUT', token, senhaData, 'Erro ao alterar senha'),
+    
+     getSolicitacoesCompra: async (token) =>
+        request('/api/intermediario/solicitacoes-compra', 'GET', token, null, 'Erro ao buscar solicitações de compra'),
+    
+    aprovarSolicitacaoCompra: async (token, solicitacaoId) =>
+        request(`/api/intermediario/solicitacoes-compra/${solicitacaoId}/aprovar`, 'POST', token, null, 'Erro ao aprovar compra'),
+    
+    rejeitarSolicitacaoCompra: async (token, solicitacaoId) =>
+        request(`/api/intermediario/solicitacoes-compra/${solicitacaoId}/rejeitar`, 'POST', token, null, 'Erro ao rejeitar compra'),
 }
 
 export const usuariosAPI = {
@@ -150,7 +159,17 @@ export const vendedorAPI = {
 
 export const clienteAPI = {
     getProdutosIntermediados: async (token) =>
-        request('/api/requests/colunasProdutosIntermediado', 'GET', token, null, 'Erro ao buscar produtos intermediados')
+        request('/api/requests/colunasProdutosIntermediado', 'GET', token, null, 'Erro ao buscar produtos intermediados'),
+    
+    // ========== NOVOS MÉTODOS PARA COMPRAS ==========
+    solicitarCompra: async (token, data) =>
+        request('/api/cliente/solicitar-compra', 'POST', token, data, 'Erro ao solicitar compra'),
+    
+    minhasSolicitacoes: async (token) =>
+        request('/api/cliente/minhas-solicitacoes', 'GET', token, null, 'Erro ao buscar minhas solicitações'),
+    
+    cancelarSolicitacao: async (token, solicitacaoId) =>
+        request(`/api/cliente/cancelar-solicitacao/${solicitacaoId}`, 'DELETE', token, null, 'Erro ao cancelar solicitação'),
 };
 
 // ==========================================

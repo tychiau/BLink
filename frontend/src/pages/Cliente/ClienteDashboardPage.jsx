@@ -116,7 +116,7 @@ const getCategoriaNome = (categoriaId) => {
 };
 
 // ============================================
-// CONFIGURAÇÕES DO MENU (SEM CARRINHO)
+// CONFIGURAÇÕES DO MENU
 // ============================================
 
 const menuItemsConfig = [
@@ -216,7 +216,8 @@ export default function ClienteDashboardPage() {
               descricao: p.produto_descricao,
               provincia: p.provincia,
               intermediario_nome: p.intermediario_nome,
-              intermediario_id: p.intermediario_id
+              intermediario_id: p.intermediario_id,
+              comissao_intermediario: p.comissao_intermediario || 5
             });
           }
         });
@@ -232,6 +233,32 @@ export default function ClienteDashboardPage() {
       console.error("Erro ao buscar produtos:", error);
       setProdutos([]);
       setProdutosOriginais([]);
+    }
+  }, []);
+
+  const fetchMinhasSolicitacoes = useCallback(async () => {
+    try {
+      const token = getToken();
+      if (!token) return;
+      
+      const data = await clienteAPI.minhasSolicitacoes(token);
+      
+      if (data && !data.error && Array.isArray(data)) {
+        const solicitacoesFormatadas = data.map(s => ({
+          id: s.id,
+          produto_id: s.produto_id,
+          nome: s.produto_nome,
+          preco: s.valor,
+          preco_formatado: s.valor_formatado,
+          imagem: s.foto_produto,
+          intermediario_nome: s.intermediario_nome,
+          status: s.status,
+          dataCompra: s.data_solicitacao
+        }));
+        setCarrinho(solicitacoesFormatadas);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar solicitações:", error);
     }
   }, []);
 
@@ -270,45 +297,54 @@ export default function ClienteDashboardPage() {
   }, [categoriaSelecionada, searchTerm, produtosOriginais, aplicarFiltros]);
 
   // ============================================
-  // FUNÇÕES DO CARRINHO
+  // FUNÇÕES DO CARRINHO (COM API)
   // ============================================
 
-  useEffect(() => {
-    const carrinhoSalvo = localStorage.getItem("blink_carrinho");
-    if (carrinhoSalvo) {
-      try {
-        setCarrinho(JSON.parse(carrinhoSalvo));
-      } catch (e) {
-        console.error("Erro ao carregar carrinho:", e);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem("blink_carrinho", JSON.stringify(carrinho));
-  }, [carrinho]);
-
-  const handleComprar = (produto) => {
-    const existeNoCarrinho = carrinho.some(item => item.id === produto.id);
+  const handleComprar = async (produto) => {
+    const existeNoCarrinho = carrinho.some(item => item.produto_id === produto.id);
     
     if (existeNoCarrinho) {
       showNotification(`"${produto.nome}" já está no seu carrinho!`, "error");
       return;
     }
     
-    const novoItem = {
-      ...produto,
-      dataCompra: new Date().toISOString(),
-      quantidade: 1
-    };
-    
-    setCarrinho(prev => [...prev, novoItem]);
-    showNotification(`"${produto.nome}" adicionado ao carrinho!`, "success");
+    try {
+      const token = getToken();
+      const response = await clienteAPI.solicitarCompra(token, {
+        produto_id: produto.id,
+        intermediario_id: produto.intermediario_id,
+        valor: produto.preco,
+        produto_nome: produto.nome,
+        comissao_percentual: produto.comissao_intermediario || 5
+      });
+      
+      if (response && !response.error && response.success) {
+        showNotification(`Solicitação de compra de "${produto.nome}" enviada ao intermediário!`, "success");
+        await fetchMinhasSolicitacoes();
+      } else {
+        showNotification(response?.message || "Erro ao solicitar compra", "error");
+      }
+    } catch (error) {
+      console.error("Erro ao solicitar compra:", error);
+      showNotification("Erro ao conectar ao servidor", "error");
+    }
   };
 
-  const handleCancelarCompra = (produtoId, produtoNome) => {
-    setCarrinho(prev => prev.filter(item => item.id !== produtoId));
-    showNotification(`Compra de "${produtoNome}" cancelada com sucesso!`, "success");
+  const handleCancelarCompra = async (solicitacaoId, produtoNome) => {
+    try {
+      const token = getToken();
+      const response = await clienteAPI.cancelarSolicitacao(token, solicitacaoId);
+      
+      if (response && !response.error && response.success) {
+        setCarrinho(prev => prev.filter(item => item.id !== solicitacaoId));
+        showNotification(`Solicitação de compra de "${produtoNome}" cancelada!`, "success");
+      } else {
+        showNotification(response?.message || "Erro ao cancelar", "error");
+      }
+    } catch (error) {
+      console.error("Erro ao cancelar:", error);
+      showNotification("Erro ao conectar ao servidor", "error");
+    }
   };
 
   const handleFinalizarCompra = () => {
@@ -317,7 +353,7 @@ export default function ClienteDashboardPage() {
       return;
     }
     
-    showNotification(`Compra finalizada com sucesso! Total: ${calcularTotalCarrinho()}`, "success");
+    showNotification(`Solicitações de compra enviadas! Aguardando aprovação dos intermediários.`, "success");
   };
 
   const calcularTotalCarrinho = () => {
@@ -327,7 +363,7 @@ export default function ClienteDashboardPage() {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await fetchProdutos();
+    await Promise.all([fetchProdutos(), fetchMinhasSolicitacoes()]);
     setCategoriaSelecionada(null);
     setSearchTerm("");
     setRefreshing(false);
@@ -339,8 +375,11 @@ export default function ClienteDashboardPage() {
     loadingRef.current = true;
     setLoading(true);
     
-    await fetchProdutos();
-    await fetchNegociacoes();
+    await Promise.all([
+      fetchProdutos(),
+      fetchMinhasSolicitacoes(),
+      fetchNegociacoes()
+    ]);
     
     setLoading(false);
     loadingRef.current = false;
@@ -401,13 +440,21 @@ export default function ClienteDashboardPage() {
                         <div className="cd-modal-carrinho-info">
                           <div className="cd-modal-carrinho-nome">{item.nome}</div>
                           <div className="cd-modal-carrinho-preco">{item.preco_formatado}</div>
+                          {item.status === 'aprovada' && (
+                            <div className="cd-carrinho-status-aprovado">✓ Aprovado</div>
+                          )}
+                          {item.status === 'pendente' && (
+                            <div className="cd-carrinho-status-pendente">⏳ Aguardando aprovação</div>
+                          )}
                         </div>
-                        <button 
-                          className="cd-modal-carrinho-remover"
-                          onClick={() => handleCancelarCompra(item.id, item.nome)}
-                        >
-                          Cancelar
-                        </button>
+                        {item.status === 'pendente' && (
+                          <button 
+                            className="cd-modal-carrinho-remover"
+                            onClick={() => handleCancelarCompra(item.id, item.nome)}
+                          >
+                            Cancelar
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -419,7 +466,7 @@ export default function ClienteDashboardPage() {
                     className="cd-modal-carrinho-finalizar"
                     onClick={handleFinalizarCompra}
                   >
-                    Finalizar Compra
+                    Finalizar Compras
                   </button>
                 </>
               )}
@@ -708,6 +755,18 @@ export default function ClienteDashboardPage() {
           justify-content: center;
           padding: 0 4px;
           border: 2px solid #fff;
+        }
+
+        .cd-carrinho-status-pendente {
+          font-size: 0.688rem;
+          color: #f59e0b;
+          margin-top: 4px;
+        }
+
+        .cd-carrinho-status-aprovado {
+          font-size: 0.688rem;
+          color: #10b981;
+          margin-top: 4px;
         }
 
         /* Modal do Carrinho */

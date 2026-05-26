@@ -536,6 +536,289 @@ app.get('/api/intermediario/listar', async (req, res) => {
 });
 
 // ============================================
+// ROTAS DE SOLICITAÇÕES DE COMPRA (CLIENTE -> INTERMEDIÁRIO)
+// ============================================
+
+// Cliente solicita compra (adiciona no carrinho)
+app.post('/api/cliente/solicitar-compra', authenticateToken, async (req, res) => {
+    try {
+        const clienteId = req.user.id;
+        const { produto_id, intermediario_id, valor, produto_nome } = req.body;
+        
+        // Buscar dados do cliente
+        const [cliente] = await pool.execute(
+            'SELECT nome, email, telefone FROM usuarios WHERE id = ? AND tipo_usuario = "cliente"',
+            [clienteId]
+        );
+        
+        if (cliente.length === 0) {
+            return res.status(404).json({ message: "Cliente não encontrado" });
+        }
+        
+        // Buscar dados do intermediário
+        const [intermediario] = await pool.execute(
+            'SELECT nome FROM usuarios WHERE id = ? AND tipo_usuario = "intermediario"',
+            [intermediario_id]
+        );
+        
+        if (intermediario.length === 0) {
+            return res.status(404).json({ message: "Intermediário não encontrado" });
+        }
+        
+        // Buscar comissão do produto
+        const [produto] = await pool.execute(
+            'SELECT comissao_intermediario FROM produtos WHERE id = ?',
+            [produto_id]
+        );
+        
+        const comissaoPercentual = produto.length > 0 ? (produto[0].comissao_intermediario || 5) : 5;
+        const comissaoValor = (valor * comissaoPercentual) / 100;
+        
+        // Verificar se já existe solicitação pendente
+        const [existente] = await pool.execute(
+            `SELECT id FROM vendas 
+             WHERE cliente_id = ? AND produto_id = ? AND status_solicitacao = 'pendente'`,
+            [clienteId, produto_id]
+        );
+        
+        if (existente.length > 0) {
+            return res.status(409).json({ 
+                success: false, 
+                message: "Você já possui uma solicitação pendente para este produto" 
+            });
+        }
+        
+        // Gerar ID único
+        const [uuidResult] = await pool.execute('SELECT UUID() as uuid');
+        const vendaId = uuidResult[0].uuid;
+        
+        // Inserir na tabela vendas
+        await pool.execute(
+            `INSERT INTO vendas (
+                id, produto_id, produto_nome, 
+                cliente_id, cliente_nome, cliente_email, cliente_telefone,
+                intermediario_id, intermediario_nome,
+                valor, comissao, percentual_comissao,
+                status_venda, status_solicitacao, data_venda
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pendente', 'pendente', NOW())`,
+            [
+                vendaId,
+                produto_id,
+                produto_nome,
+                clienteId,
+                cliente[0].nome,
+                cliente[0].email || '',
+                cliente[0].telefone || '',
+                intermediario_id,
+                intermediario[0].nome,
+                valor,
+                comissaoValor,
+                comissaoPercentual
+            ]
+        );
+        
+        res.status(201).json({ 
+            success: true, 
+            message: "Solicitação de compra enviada ao intermediário!",
+            venda_id: vendaId
+        });
+        
+    } catch (error) {
+        console.error('Erro ao solicitar compra:', error);
+        res.status(500).json({ message: "Erro ao solicitar compra" });
+    }
+});
+
+// Intermediário busca solicitações de compra pendentes
+app.get('/api/intermediario/solicitacoes-compra', authenticateToken, async (req, res) => {
+    try {
+        const intermediarioId = req.user.id;
+        
+        const [rows] = await pool.execute(
+            `SELECT 
+                v.id,
+                v.produto_id,
+                v.produto_nome,
+                v.cliente_id,
+                v.cliente_nome,
+                v.cliente_email,
+                v.cliente_telefone,
+                v.valor,
+                v.comissao,
+                v.percentual_comissao,
+                v.data_venda,
+                p.foto_produto
+             FROM vendas v
+             LEFT JOIN produtos p ON v.produto_id = p.id
+             WHERE v.intermediario_id = ? AND v.status_solicitacao = 'pendente'
+             ORDER BY v.data_venda DESC`,
+            [intermediarioId]
+        );
+        
+        const solicitacoes = rows.map(v => {
+            let fotoProduto = null;
+            if (v.foto_produto && Buffer.isBuffer(v.foto_produto)) {
+                fotoProduto = `data:image/jpeg;base64,${v.foto_produto.toString('base64')}`;
+            }
+            
+            return {
+                id: v.id,
+                produto_id: v.produto_id,
+                produto_nome: v.produto_nome,
+                cliente_id: v.cliente_id,
+                cliente_nome: v.cliente_nome,
+                cliente_email: v.cliente_email,
+                cliente_telefone: v.cliente_telefone,
+                valor: parseFloat(v.valor),
+                comissao: parseFloat(v.comissao),
+                comissao_percentual: parseFloat(v.percentual_comissao),
+                foto_produto: fotoProduto || "https://placehold.co/60x60/1e3a5f/ffffff?text=P",
+                data_solicitacao: v.data_venda
+            };
+        });
+        
+        res.json(solicitacoes);
+    } catch (error) {
+        console.error('Erro ao buscar solicitações de compra:', error);
+        res.status(500).json({ message: "Erro ao buscar solicitações" });
+    }
+});
+
+// Intermediário aprova solicitação de compra
+app.post('/api/intermediario/solicitacoes-compra/:solicitacaoId/aprovar', authenticateToken, async (req, res) => {
+    const { solicitacaoId } = req.params;
+    const intermediarioId = req.user.id;
+    
+    try {
+        const [solicitacao] = await pool.execute(
+            `SELECT id FROM vendas 
+             WHERE id = ? AND intermediario_id = ? AND status_solicitacao = 'pendente'`,
+            [solicitacaoId, intermediarioId]
+        );
+        
+        if (solicitacao.length === 0) {
+            return res.status(404).json({ message: "Solicitação não encontrada" });
+        }
+        
+        await pool.execute(
+            `UPDATE vendas 
+             SET status_solicitacao = 'aprovada', 
+                 status_venda = 'retido'
+             WHERE id = ?`,
+            [solicitacaoId]
+        );
+        
+        res.json({ success: true, message: "Compra aprovada com sucesso!" });
+        
+    } catch (error) {
+        console.error('Erro ao aprovar:', error);
+        res.status(500).json({ message: "Erro ao aprovar compra" });
+    }
+});
+
+// Intermediário rejeita solicitação de compra
+app.post('/api/intermediario/solicitacoes-compra/:solicitacaoId/rejeitar', authenticateToken, async (req, res) => {
+    const { solicitacaoId } = req.params;
+    const intermediarioId = req.user.id;
+    
+    try {
+        const [solicitacao] = await pool.execute(
+            `SELECT id FROM vendas 
+             WHERE id = ? AND intermediario_id = ? AND status_solicitacao = 'pendente'`,
+            [solicitacaoId, intermediarioId]
+        );
+        
+        if (solicitacao.length === 0) {
+            return res.status(404).json({ message: "Solicitação não encontrada" });
+        }
+        
+        await pool.execute(
+            `UPDATE vendas SET status_solicitacao = 'rejeitada' WHERE id = ?`,
+            [solicitacaoId]
+        );
+        
+        res.json({ success: true, message: "Compra rejeitada" });
+        
+    } catch (error) {
+        console.error('Erro ao rejeitar:', error);
+        res.status(500).json({ message: "Erro ao rejeitar compra" });
+    }
+});
+
+// Cliente busca suas solicitações (para o carrinho)
+app.get('/api/cliente/minhas-solicitacoes', authenticateToken, async (req, res) => {
+    try {
+        const clienteId = req.user.id;
+        
+        const [rows] = await pool.execute(
+            `SELECT 
+                v.id,
+                v.produto_id,
+                v.produto_nome,
+                v.valor,
+                v.status_solicitacao,
+                v.data_venda,
+                p.foto_produto,
+                u.nome as intermediario_nome
+             FROM vendas v
+             LEFT JOIN produtos p ON v.produto_id = p.id
+             LEFT JOIN usuarios u ON v.intermediario_id = u.id
+             WHERE v.cliente_id = ? AND v.status_solicitacao IN ('pendente', 'aprovada')
+             ORDER BY v.data_venda DESC`,
+            [clienteId]
+        );
+        
+        const solicitacoes = rows.map(v => {
+            let fotoProduto = null;
+            if (v.foto_produto && Buffer.isBuffer(v.foto_produto)) {
+                fotoProduto = `data:image/jpeg;base64,${v.foto_produto.toString('base64')}`;
+            }
+            
+            return {
+                id: v.id,
+                produto_id: v.produto_id,
+                produto_nome: v.produto_nome,
+                valor: parseFloat(v.valor),
+                valor_formatado: `${parseFloat(v.valor).toLocaleString()} MZN`,
+                status: v.status_solicitacao,
+                intermediario_nome: v.intermediario_nome,
+                foto_produto: fotoProduto || "https://placehold.co/80x80/1e3a5f/ffffff?text=P",
+                data_solicitacao: v.data_venda
+            };
+        });
+        
+        res.json(solicitacoes);
+    } catch (error) {
+        console.error('Erro ao buscar solicitações do cliente:', error);
+        res.status(500).json({ message: "Erro ao buscar solicitações" });
+    }
+});
+
+// Cliente cancela solicitação (remove do carrinho)
+app.delete('/api/cliente/cancelar-solicitacao/:solicitacaoId', authenticateToken, async (req, res) => {
+    const { solicitacaoId } = req.params;
+    const clienteId = req.user.id;
+    
+    try {
+        const [result] = await pool.execute(
+            `DELETE FROM vendas 
+             WHERE id = ? AND cliente_id = ? AND status_solicitacao = 'pendente'`,
+            [solicitacaoId, clienteId]
+        );
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "Solicitação não encontrada" });
+        }
+        
+        res.json({ success: true, message: "Solicitação cancelada com sucesso" });
+        
+    } catch (error) {
+        console.error('Erro ao cancelar:', error);
+        res.status(500).json({ message: "Erro ao cancelar solicitação" });
+    }
+});
+
+// ============================================
 // ROTAS EXISTENTES
 // ============================================
 const authRoutes = require('./src/routes/authRoutes');
@@ -563,7 +846,14 @@ app.get('/', (req, res) => {
             aprovacoes_pendentes: "/api/intermediario/aprovacoes-pendentes",
             meus_produtos_ativos: "/api/intermediario/meus-produtos-ativos",
             solicitar: "POST /api/intermediario/solicitar/:produtoId",
-            cancelar: "DELETE /api/intermediario/solicitacao/:solicitacaoId"
+            cancelar: "DELETE /api/intermediario/solicitacao/:solicitacaoId",
+            // Novos endpoints
+            solicitar_compra: "POST /api/cliente/solicitar-compra",
+            solicitacoes_compra: "GET /api/intermediario/solicitacoes-compra",
+            aprovar_compra: "POST /api/intermediario/solicitacoes-compra/:id/aprovar",
+            rejeitar_compra: "POST /api/intermediario/solicitacoes-compra/:id/rejeitar",
+            minhas_solicitacoes: "GET /api/cliente/minhas-solicitacoes",
+            cancelar_solicitacao: "DELETE /api/cliente/cancelar-solicitacao/:id"
         },
         timestamp: new Date().toISOString()
     });
@@ -589,6 +879,13 @@ app.use((err, req, res, next) => {
 // Iniciar servidor
 app.listen(PORT, () => {
     console.log(`Servidor rodando em http://localhost:${PORT}`);
+    console.log(`Rotas de compra disponíveis:`);
+    console.log(`  POST /api/cliente/solicitar-compra`);
+    console.log(`  GET /api/intermediario/solicitacoes-compra`);
+    console.log(`  POST /api/intermediario/solicitacoes-compra/:id/aprovar`);
+    console.log(`  POST /api/intermediario/solicitacoes-compra/:id/rejeitar`);
+    console.log(`  GET /api/cliente/minhas-solicitacoes`);
+    console.log(`  DELETE /api/cliente/cancelar-solicitacao/:id`);
 });
 
 module.exports = pool;
