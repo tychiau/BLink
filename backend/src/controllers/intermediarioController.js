@@ -598,3 +598,258 @@ exports.alterarSenha = async (req, res) => {
         });
     }
 };
+// backend/src/controllers/intermediarioController.js
+
+// ============================================
+// ========== MÉTODOS DE SOLICITAÇÕES DE COMPRA ==========
+// ============================================
+
+/**
+ * Intermediário busca solicitações de compra pendentes
+ * (solicitações que estão na tabela vendas com status_venda = 'retido'? Não, as pendentes são as que o cliente solicitou mas ainda não têm venda)
+ * 
+ * Na verdade, quando o cliente solicita uma compra, deve-se criar um registro na tabela vendas
+ * com status_venda = 'retido' (aguardando aprovação do intermediário)
+ * GET /api/intermediario/solicitacoes-compra
+ */
+exports.getSolicitacoesCompra = async (req, res) => {
+    try {
+        const intermediarioId = req.user.id;
+        
+        const [rows] = await db.execute(
+            `SELECT 
+                v.id,
+                v.produto_id,
+                v.valor_final,
+                v.status_venda,
+                v.data_venda,
+                p.nome as produto_nome,
+                p.foto_produto,
+                u.nome as cliente_nome,
+                u.email as cliente_email,
+                u.telefone as cliente_telefone
+             FROM vendas v
+             INNER JOIN produtos p ON v.produto_id = p.id
+             INNER JOIN usuarios u ON v.cliente_id = u.id
+             WHERE v.intermediario_id = ? AND v.status_venda = 'retido'
+             ORDER BY v.data_venda DESC`,
+            [intermediarioId]
+        );
+        
+        const solicitacoes = rows.map(v => {
+            let fotoProduto = null;
+            if (v.foto_produto && Buffer.isBuffer(v.foto_produto)) {
+                fotoProduto = `data:image/jpeg;base64,${v.foto_produto.toString('base64')}`;
+            }
+            
+            return {
+                id: v.id,
+                produto_id: v.produto_id,
+                produto_nome: v.produto_nome,
+                cliente_id: v.cliente_id,
+                cliente_nome: v.cliente_nome,
+                cliente_email: v.cliente_email || '',
+                cliente_telefone: v.cliente_telefone || '',
+                valor: parseFloat(v.valor_final),
+                foto_produto: fotoProduto || "https://placehold.co/60x60/1e3a5f/ffffff?text=P",
+                data_solicitacao: v.data_venda,
+                status: v.status_venda
+            };
+        });
+        
+        res.json(solicitacoes);
+    } catch (error) {
+        console.error('Erro ao buscar solicitações de compra:', error);
+        res.status(500).json({ message: "Erro ao buscar solicitações" });
+    }
+};
+
+/**
+ * Intermediário aprova solicitação de compra
+ * (mantém status_venda como 'retido' - já está correto, apenas registra a aprovação)
+ * POST /api/intermediario/solicitacoes-compra/:solicitacaoId/aprovar
+ */
+exports.aprovarSolicitacaoCompra = async (req, res) => {
+    const { solicitacaoId } = req.params;
+    const intermediarioId = req.user.id;
+    
+    try {
+        // Verificar se a solicitação existe e está com status 'retido'
+        const [solicitacao] = await db.execute(
+            `SELECT id, status_venda FROM vendas 
+             WHERE id = ? AND intermediario_id = ? AND status_venda = 'retido'`,
+            [solicitacaoId, intermediarioId]
+        );
+        
+        if (solicitacao.length === 0) {
+            return res.status(404).json({ message: "Solicitação não encontrada ou já processada" });
+        }
+        
+        // Aprovado - status permanece 'retido' (aguardando pagamento/liquidação)
+        // Podemos adicionar uma coluna 'aprovado_em' se necessário
+        await db.execute(
+            `UPDATE vendas SET data_aprovacao = NOW() WHERE id = ?`,
+            [solicitacaoId]
+        );
+        
+        console.log(`Solicitação ${solicitacaoId} aprovada pelo intermediário ${intermediarioId}`);
+        res.json({ success: true, message: "Compra aprovada com sucesso! Aguardando liquidação." });
+        
+    } catch (error) {
+        console.error('Erro ao aprovar:', error);
+        res.status(500).json({ message: "Erro ao aprovar compra" });
+    }
+};
+
+/**
+ * Intermediário rejeita solicitação de compra
+ * (altera status_venda para 'estornado')
+ * POST /api/intermediario/solicitacoes-compra/:solicitacaoId/rejeitar
+ */
+exports.rejeitarSolicitacaoCompra = async (req, res) => {
+    const { solicitacaoId } = req.params;
+    const intermediarioId = req.user.id;
+    
+    try {
+        // Verificar se a solicitação existe e está com status 'retido'
+        const [solicitacao] = await db.execute(
+            `SELECT id, status_venda FROM vendas 
+             WHERE id = ? AND intermediario_id = ? AND status_venda = 'retido'`,
+            [solicitacaoId, intermediarioId]
+        );
+        
+        if (solicitacao.length === 0) {
+            return res.status(404).json({ message: "Solicitação não encontrada" });
+        }
+        
+        // Rejeitado - muda status para 'estornado'
+        await db.execute(
+            `UPDATE vendas SET status_venda = 'estornado' WHERE id = ?`,
+            [solicitacaoId]
+        );
+        
+        console.log(`✅ Solicitação ${solicitacaoId} rejeitada pelo intermediário ${intermediarioId}`);
+        res.json({ success: true, message: "Compra rejeitada" });
+        
+    } catch (error) {
+        console.error('Erro ao rejeitar:', error);
+        res.status(500).json({ message: "Erro ao rejeitar compra" });
+    }
+};
+
+/**
+ * Intermediário liquida uma venda (após receber pagamento)
+ * Altera status_venda de 'retido' para 'liquidado'
+ * POST /api/intermediario/vendas/:vendaId/liquidar
+ */
+exports.liquidarVenda = async (req, res) => {
+    const { vendaId } = req.params;
+    const intermediarioId = req.user.id;
+    
+    try {
+        const [venda] = await db.execute(
+            `SELECT id, status_venda FROM vendas 
+             WHERE id = ? AND intermediario_id = ? AND status_venda = 'retido'`,
+            [vendaId, intermediarioId]
+        );
+        
+        if (venda.length === 0) {
+            return res.status(404).json({ message: "Venda não encontrada ou já liquidada" });
+        }
+        
+        await db.execute(
+            `UPDATE vendas SET status_venda = 'liquidado' WHERE id = ?`,
+            [vendaId]
+        );
+        
+        res.json({ success: true, message: "Venda liquidada com sucesso!" });
+        
+    } catch (error) {
+        console.error('Erro ao liquidar venda:', error);
+        res.status(500).json({ message: "Erro ao liquidar venda" });
+    }
+};
+
+/**
+ * Intermediário busca vendas (histórico)
+ * GET /api/intermediario/vendas
+ */
+exports.getVendas = async (req, res) => {
+    try {
+        const intermediarioId = req.user.id;
+        
+        const [rows] = await db.execute(
+            `SELECT 
+                v.id,
+                v.produto_id,
+                v.valor_final,
+                v.status_venda,
+                v.data_venda,
+                p.nome as produto_nome,
+                p.foto_produto,
+                u.nome as cliente_nome
+             FROM vendas v
+             INNER JOIN produtos p ON v.produto_id = p.id
+             INNER JOIN usuarios u ON v.cliente_id = u.id
+             WHERE v.intermediario_id = ?
+             ORDER BY v.data_venda DESC`,
+            [intermediarioId]
+        );
+        
+        const vendas = rows.map(v => {
+            let fotoProduto = null;
+            if (v.foto_produto && Buffer.isBuffer(v.foto_produto)) {
+                fotoProduto = `data:image/jpeg;base64,${v.foto_produto.toString('base64')}`;
+            }
+            
+            return {
+                id: v.id,
+                produto_id: v.produto_id,
+                produto_nome: v.produto_nome,
+                cliente_nome: v.cliente_nome,
+                valor: parseFloat(v.valor_final),
+                status: v.status_venda,
+                foto_produto: fotoProduto,
+                data_venda: v.data_venda
+            };
+        });
+        
+        res.json(vendas);
+    } catch (error) {
+        console.error('Erro ao buscar vendas:', error);
+        res.status(500).json({ message: "Erro ao buscar vendas" });
+    }
+};
+
+/**
+ * Intermediário busca estatísticas de vendas
+ * GET /api/intermediario/vendas/estatisticas
+ */
+exports.getVendasEstatisticas = async (req, res) => {
+    try {
+        const intermediarioId = req.user.id;
+        
+        const [rows] = await db.execute(
+            `SELECT 
+                COUNT(*) as total_vendas,
+                SUM(CASE WHEN status_venda = 'liquidado' THEN 1 ELSE 0 END) as vendas_liquidadas,
+                SUM(CASE WHEN status_venda = 'retido' THEN 1 ELSE 0 END) as vendas_retidas,
+                SUM(CASE WHEN status_venda = 'estornado' THEN 1 ELSE 0 END) as vendas_estornadas,
+                COALESCE(SUM(valor_final), 0) as valor_total
+             FROM vendas 
+             WHERE intermediario_id = ?`,
+            [intermediarioId]
+        );
+        
+        res.json({
+            total_vendas: rows[0].total_vendas || 0,
+            vendas_liquidadas: rows[0].vendas_liquidadas || 0,
+            vendas_retidas: rows[0].vendas_retidas || 0,
+            vendas_estornadas: rows[0].vendas_estornadas || 0,
+            valor_total: parseFloat(rows[0].valor_total || 0)
+        });
+    } catch (error) {
+        console.error('Erro ao buscar estatísticas de vendas:', error);
+        res.status(500).json({ message: "Erro ao buscar estatísticas" });
+    }
+};

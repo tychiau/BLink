@@ -1,7 +1,15 @@
+// frontend/src/api.js
+
+// ==========================================
+// CONFIGURAÇÃO BASE DA API
+// ==========================================
+// Para desenvolvimento local, use:
+// const API_BASE_URL = 'http://localhost:3000';
+// Para produção (Render), use:
 const API_BASE_URL = 'https://blink-oz62.onrender.com';
 
 // ==========================================
-// FUNÇÃO AUXILIAR CENTRALIZADA (INTERNA)
+// FUNÇÃO AUXILIAR CENTRALIZADA
 // ==========================================
 const request = async (endpoint, method = 'GET', token = null, bodyData = null, customErrorMessage = 'Erro na requisição') => {
     try {
@@ -10,28 +18,24 @@ const request = async (endpoint, method = 'GET', token = null, bodyData = null, 
             headers['Authorization'] = `Bearer ${token}`;
         }
 
-        const config = {
-            method,
-            headers
-        };
-
+        const config = { method, headers };
         if (bodyData) {
             config.body = JSON.stringify(bodyData);
         }
 
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+        const url = `${API_BASE_URL}${endpoint}`;
+        console.log(`📡 ${method} ${url}`);
 
-        // Algumas APIs antigas do ficheiro não faziam o parse do JSON se o status fosse de erro, 
-        // mas a maioria sim. O parse seguro é feito aqui:
+        const response = await fetch(url, config);
+
         let data = null;
         try {
             data = await response.json();
         } catch (e) {
-            // Caso a resposta venha vazia por parte do servidor
+            console.warn('Resposta não é JSON:', e);
         }
 
         if (!response.ok) {
-            // Mantém compatibilidade com funções que esperavam o status ou a estrutura antiga
             return {
                 error: true,
                 status: response.status,
@@ -47,7 +51,7 @@ const request = async (endpoint, method = 'GET', token = null, bodyData = null, 
 };
 
 // ==========================================
-// FLUXO DE AUTENTICAÇÃO E LOGOUT
+// AUTENTICAÇÃO
 // ==========================================
 export const handleLogout = () => {
     localStorage.removeItem('blink_user');
@@ -68,7 +72,7 @@ export const registerAPI = async (userData) => {
 };
 
 // ==========================================
-// APIS AGRUPADAS
+// PRODUTOS API
 // ==========================================
 export const productsAPI = {
     getMyProducts: async (token) =>
@@ -93,39 +97,45 @@ export const productsAPI = {
         request(`/api/produto/${productId}`, 'GET', token, null, 'Erro ao buscar produto')
 };
 
+// ==========================================
+// INTERMEDIÁRIO API
+// ==========================================
 export const intermediarioAPI = {
+    // Dashboard
     getOportunidades: async (token) =>
         request('/api/intermediario/oportunidades', 'GET', token, null, 'Erro ao buscar oportunidades'),
-
+    
     getMeusProdutosAtivos: async (token) =>
         request('/api/intermediario/produtos-ativos', 'GET', token, null, 'Erro ao buscar meus produtos'),
-
+    
     getStats: async (token) =>
         request('/api/intermediario/stats', 'GET', token, null, 'Erro ao buscar estatísticas'),
-
+    
+    // Solicitações de intermediação
     solicitarIntermediacao: async (token, produtoId) =>
         request(`/api/intermediario/solicitar/${produtoId}`, 'POST', token, null, 'Erro ao solicitar intermediação'),
-
+    
     cancelarSolicitacao: async (token, solicitacaoId) =>
         request(`/api/intermediario/solicitacao/${solicitacaoId}`, 'DELETE', token, null, 'Erro ao cancelar solicitação'),
-
+    
     getAprovacoesPendentes: async (token) =>
         request('/api/intermediario/aprovacoes-pendentes', 'GET', token, null, 'Erro ao buscar aprovações pendentes'),
-
-    // ========== MÉTODOS DE PERFIL ==========
+    
+    // Perfil
     getPerfil: async (token) =>
         request('/api/intermediario/perfil', 'GET', token, null, 'Erro ao buscar perfil'),
-
+    
     updatePerfil: async (token, perfilData) =>
         request('/api/intermediario/perfil', 'PUT', token, perfilData, 'Erro ao atualizar perfil'),
-
+    
     updateFotoPerfil: async (token, fotoBase64) =>
         request('/api/intermediario/perfil/foto', 'PUT', token, { foto_base64: fotoBase64 }, 'Erro ao atualizar foto'),
-
+    
     alterarSenha: async (token, senhaData) =>
         request('/api/intermediario/alterar-senha', 'PUT', token, senhaData, 'Erro ao alterar senha'),
-
-     getSolicitacoesCompra: async (token) =>
+    
+    // Solicitações de compra (novas)
+    getSolicitacoesCompra: async (token) =>
         request('/api/intermediario/solicitacoes-compra', 'GET', token, null, 'Erro ao buscar solicitações de compra'),
     
     aprovarSolicitacaoCompra: async (token, solicitacaoId) =>
@@ -133,47 +143,70 @@ export const intermediarioAPI = {
     
     rejeitarSolicitacaoCompra: async (token, solicitacaoId) =>
         request(`/api/intermediario/solicitacoes-compra/${solicitacaoId}/rejeitar`, 'POST', token, null, 'Erro ao rejeitar compra'),
-}
+};
 
+// ==========================================
+// USUÁRIOS API
+// ==========================================
 export const usuariosAPI = {
     getIntermediarios: async (token) =>
         request('/api/usuarios/intermediarios', 'GET', token, null, 'Erro ao buscar intermediários')
 };
 
-// Nota: Existia uma redundância de endpoints parecidos aqui, mantidos para evitar quebras de importação externa
 export const intermediariosAPI = {
     listarIntermediarios: async (token) =>
         request('/api/intermediario/listar', 'GET', token, null, 'Erro ao buscar intermediários')
 };
 
+// ==========================================
+// VENDEDOR API
+// ==========================================
 export const vendedorAPI = {
     getSolicitacoesRecebidas: async (token) =>
         request('/api/intermediario/vendedor/solicitacoes', 'GET', token, null, 'Erro ao buscar solicitações'),
-
+    
     aceitarSolicitacao: async (token, solicitacaoId) =>
         request(`/api/intermediario/vendedor/solicitacoes/${solicitacaoId}/aceitar`, 'POST', token, null, 'Erro ao aceitar solicitação'),
-
+    
     rejeitarSolicitacao: async (token, solicitacaoId) =>
         request(`/api/intermediario/vendedor/solicitacoes/${solicitacaoId}/rejeitar`, 'POST', token, null, 'Erro ao rejeitar solicitação')
 };
 
+// ==========================================
+// CLIENTE API
+// ==========================================
 export const clienteAPI = {
+    // Produtos intermediados
     getProdutosIntermediados: async (token) =>
         request('/api/requests/colunasProdutosIntermediado', 'GET', token, null, 'Erro ao buscar produtos intermediados'),
     
-    // ========== NOVOS MÉTODOS PARA COMPRAS ==========
+    // Compras (novos métodos)
+    /**
+     * Solicita uma compra (adiciona ao carrinho)
+     * @param {string} token - Token de autenticação
+     * @param {Object} data - Dados da compra { produto_id, intermediario_id, valor_final }
+     */
     solicitarCompra: async (token, data) =>
         request('/api/cliente/solicitar-compra', 'POST', token, data, 'Erro ao solicitar compra'),
     
+    /**
+     * Busca todas as solicitações de compra do cliente (carrinho)
+     * @param {string} token - Token de autenticação
+     */
     minhasSolicitacoes: async (token) =>
         request('/api/cliente/minhas-solicitacoes', 'GET', token, null, 'Erro ao buscar minhas solicitações'),
     
+    /**
+     * Cancela uma solicitação de compra (remove do carrinho)
+     * @param {string} token - Token de autenticação
+     * @param {string} solicitacaoId - ID da solicitação
+     */
     cancelarSolicitacao: async (token, solicitacaoId) =>
         request(`/api/cliente/cancelar-solicitacao/${solicitacaoId}`, 'DELETE', token, null, 'Erro ao cancelar solicitação'),
 };
 
 // ==========================================
-// EXPORTAÇÃO DEFAULT (COMPATIBILIDADE)
+// EXPORTAÇÃO DEFAULT
 // ==========================================
 const apiService = {
     handleLogout,
