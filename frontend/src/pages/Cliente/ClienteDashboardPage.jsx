@@ -276,14 +276,14 @@ export default function ClienteDashboardPage() {
     let filtrados = [...produtosOriginais];
     
     if (categoriaSelecionada !== null && categoriaSelecionada !== undefined) {
-      filtrados = filtrados.filter(produto => produto.categoria_id === categoriaSelecionada);
+      filtrados = filtrados.filter(produtos => produtos.categoria_id === categoriaSelecionada);
     }
     
     if (searchTerm && searchTerm.trim() !== "") {
       const term = searchTerm.toLowerCase().trim();
-      filtrados = filtrados.filter(produto => 
-        produto.nome.toLowerCase().includes(term) ||
-        (produto.intermediario_nome && produto.intermediario_nome.toLowerCase().includes(term))
+      filtrados = filtrados.filter(produtos => 
+        produtos.nome.toLowerCase().includes(term) ||
+        (produtos.intermediario_nome && produtos.intermediario_nome.toLowerCase().includes(term))
       );
     }
     
@@ -300,26 +300,26 @@ export default function ClienteDashboardPage() {
   // FUNÇÕES DO CARRINHO (COM API)
   // ============================================
 
-  const handleComprar = async (produto) => {
-    const existeNoCarrinho = carrinho.some(item => item.produto_id === produto.id);
+  const handleComprar = async (produtos) => {
+    const existeNoCarrinho = carrinho.some(item => item.produto_id === produtos.id);
     
     if (existeNoCarrinho) {
-      showNotification(`"${produto.nome}" já está no seu carrinho!`, "error");
+      showNotification(`"${produtos.nome}" já está no seu carrinho!`, "error");
       return;
     }
     
     try {
       const token = getToken();
       const response = await clienteAPI.solicitarCompra(token, {
-        produto_id: produto.id,
-        intermediario_id: produto.intermediario_id,
-        valor: produto.preco,
-        produto_nome: produto.nome,
-        comissao_percentual: produto.comissao_intermediario || 5
+        produto_id: produtos.id,
+        intermediario_id: produtos.intermediario_id,
+        valor: produtos.preco_minimo,
+        produto_nome: produtos.nome,
+        comissao_percentual: produtos.comissao_intermediario || 5
       });
       
       if (response && !response.error && response.success) {
-        showNotification(`Solicitação de compra de "${produto.nome}" enviada ao intermediário!`, "success");
+        showNotification(`Solicitação de compra de "${produtos.nome}" enviada ao intermediário!`, "success");
         await fetchMinhasSolicitacoes();
       } else {
         showNotification(response?.message || "Erro ao solicitar compra", "error");
@@ -606,11 +606,11 @@ export default function ClienteDashboardPage() {
                     <small>Novos produtos aparecerão aqui quando disponíveis.</small>
                   </div>
                 ) : (
-                  produtos.map((produto) => (
-                    <div key={produto.id} className="cd-produto-card">
+                  produtos.map((produtos) => (
+                    <div key={produtos.id} className="cd-produto-card">
                       <img
-                        src={produto.imagem}
-                        alt={produto.nome}
+                        src={produtos.imagem}
+                        alt={produtos.nome}
                         className="cd-produto-imagem"
                         onError={(e) => {
                           e.target.src = "https://placehold.co/300x200/1e3a5f/ffffff?text=Produto";
@@ -618,26 +618,26 @@ export default function ClienteDashboardPage() {
                       />
                       <div className="cd-produto-info">
                         <div className="cd-produto-header">
-                          <h3 className="cd-produto-nome">{produto.nome}</h3>
+                          <h3 className="cd-produto-nome">{produtos.nome}</h3>
                           <span className="cd-produto-badge cd-badge-disponivel">Disponível</span>
                         </div>
                         <div className="cd-produto-categoria">
-                          {produto.categoria_nome}
+                          {produtos.categoria_nome}
                         </div>
                         <div className="cd-produto-preco">
-                          {produto.preco_formatado}
+                          {produtos.preco_formatado}
                         </div>
                         <div className="cd-produto-localizacao">
-                          <IconLocalizacao /> {produto.provincia || "Localização não definida"}
+                          <IconLocalizacao /> {produtos.provincia || "Localização não definida"}
                         </div>
-                        {produto.intermediario_nome && (
+                        {produtos.intermediario_nome && (
                           <div className="cd-produto-intermediario">
-                            <span>Intermediário: {produto.intermediario_nome}</span>
+                            <span>Intermediário: {produtos.intermediario_nome}</span>
                           </div>
                         )}
                         <button 
                           className="cd-btn-comprar"
-                          onClick={() => handleComprar(produto)}
+                          onClick={() => handleComprar(produtos)}
                         >
                           <IconCarrinhoCompras />
                           Comprar
