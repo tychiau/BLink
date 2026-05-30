@@ -235,32 +235,22 @@ export default function ClienteDashboardPage() {
       setProdutosOriginais([]);
     }
   }, []);
-
-  const fetchMinhasSolicitacoes = useCallback(async () => {
+// Adicione este log na função fetchMinhasSolicitacoes
+const fetchMinhasSolicitacoes = useCallback(async () => {
     try {
-      const token = getToken();
-      if (!token) return;
-      
-      const data = await clienteAPI.minhasSolicitacoes(token);
-      
-      if (data && !data.error && Array.isArray(data)) {
-        const solicitacoesFormatadas = data.map(s => ({
-          id: s.id,
-          produto_id: s.produto_id,
-          nome: s.produto_nome,
-          preco: s.valor,
-          preco_formatado: s.valor_formatado,
-          imagem: s.foto_produto,
-          intermediario_nome: s.intermediario_nome,
-          status: s.status,
-          dataCompra: s.data_solicitacao
-        }));
-        setCarrinho(solicitacoesFormatadas);
-      }
+        const token = getToken();
+        if (!token) return;
+        
+        const data = await clienteAPI.minhasSolicitacoes(token);
+        console.log("Dados do carrinho:", data);
+        
+        if (data && !data.error && Array.isArray(data)) {
+            setCarrinho(data);
+        }
     } catch (error) {
-      console.error("Erro ao buscar solicitações:", error);
+        console.error("Erro ao buscar solicitações:", error);
     }
-  }, []);
+}, []);
 
   const fetchNegociacoes = useCallback(async () => {
     setNegociacoes([]);
@@ -299,36 +289,44 @@ export default function ClienteDashboardPage() {
   // ============================================
   // FUNÇÕES DO CARRINHO (COM API)
   // ============================================
-
-  const handleComprar = async (produtos) => {
-    const existeNoCarrinho = carrinho.some(item => item.produto_id === produtos.id);
+const handleComprar = async (produto) => {
+    console.log("=== HANDLE COMPRAR ===");
+    console.log("Produto:", produto);
+    
+    const existeNoCarrinho = carrinho.some(item => item.id === produto.id);
     
     if (existeNoCarrinho) {
-      showNotification(`"${produtos.nome}" já está no seu carrinho!`, "error");
-      return;
+        showNotification(`"${produto.nome}" já está no seu carrinho!`, "error");
+        return;
     }
     
     try {
-      const token = getToken();
-      const response = await clienteAPI.solicitarCompra(token, {
-        produto_id: produtos.id,
-        intermediario_id: produtos.intermediario_id,
-        valor: produtos.preco_minimo,
-        produto_nome: produtos.nome,
-        comissao_percentual: produtos.comissao_intermediario || 5
-      });
-      
-      if (response && !response.error && response.success) {
-        showNotification(`Solicitação de compra de "${produtos.nome}" enviada ao intermediário!`, "success");
-        await fetchMinhasSolicitacoes();
-      } else {
-        showNotification(response?.message || "Erro ao solicitar compra", "error");
-      }
+        const token = getToken();
+        
+        // Envia apenas o produto_id (o backend busca o intermediario_id)
+        const response = await clienteAPI.solicitarCompra(token, {
+            produto_id: produto.id
+        });
+        
+        console.log("Resposta do servidor:", response);
+        
+        if (response && !response.error && response.success) {
+            const novoItem = {
+                ...produto,
+                dataCompra: new Date().toISOString(),
+                quantidade: 1
+            };
+            
+            setCarrinho(prev => [...prev, novoItem]);
+            showNotification(`"${produto.nome}" adicionado ao carrinho!`, "success");
+        } else {
+            showNotification(response?.message || "Erro ao solicitar compra", "error");
+        }
     } catch (error) {
-      console.error("Erro ao solicitar compra:", error);
-      showNotification("Erro ao conectar ao servidor", "error");
+        console.error("Erro ao solicitar compra:", error);
+        showNotification("Erro ao conectar ao servidor", "error");
     }
-  };
+};
 
   const handleCancelarCompra = async (solicitacaoId, produtoNome) => {
     try {

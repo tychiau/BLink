@@ -4,9 +4,9 @@
 // CONFIGURAÇÃO BASE DA API
 // ==========================================
 // Para desenvolvimento local, use:
-// const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = 'http://localhost:3000';
 // Para produção (Render), use:
-const API_BASE_URL = 'https://blink-oz62.onrender.com';
+//const API_BASE_URL = 'https://blink-oz62.onrender.com';
 
 // ==========================================
 // FUNÇÃO AUXILIAR CENTRALIZADA
@@ -176,31 +176,15 @@ export const vendedorAPI = {
 // CLIENTE API
 // ==========================================
 export const clienteAPI = {
-    // Produtos intermediados
     getProdutosIntermediados: async (token) =>
         request('/api/requests/colunasProdutosIntermediado', 'GET', token, null, 'Erro ao buscar produtos intermediados'),
     
-    // Compras (novos métodos)
-    /**
-     * Solicita uma compra (adiciona ao carrinho)
-     * @param {string} token - Token de autenticação
-     * @param {Object} data - Dados da compra { produto_id, intermediario_id, valor_final }
-     */
     solicitarCompra: async (token, data) =>
         request('/api/cliente/solicitar-compra', 'POST', token, data, 'Erro ao solicitar compra'),
     
-    /**
-     * Busca todas as solicitações de compra do cliente (carrinho)
-     * @param {string} token - Token de autenticação
-     */
     minhasSolicitacoes: async (token) =>
         request('/api/cliente/minhas-solicitacoes', 'GET', token, null, 'Erro ao buscar minhas solicitações'),
     
-    /**
-     * Cancela uma solicitação de compra (remove do carrinho)
-     * @param {string} token - Token de autenticação
-     * @param {string} solicitacaoId - ID da solicitação
-     */
     cancelarSolicitacao: async (token, solicitacaoId) =>
         request(`/api/cliente/cancelar-solicitacao/${solicitacaoId}`, 'DELETE', token, null, 'Erro ao cancelar solicitação'),
 };
